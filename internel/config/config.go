@@ -6,6 +6,11 @@ import (
 	"log"
 )
 
+type Server struct {
+	RedirectURL string `json:"redirect_url"`
+	Port        int    `json:"port"`
+}
+
 type Feishu struct {
 	AppID     string `json:"app_id"`
 	AppSecret string `json:"app_secret"`
@@ -13,13 +18,14 @@ type Feishu struct {
 
 type Config struct {
 	Feishu Feishu `json:"feishu"`
+	Server Server `json:"server"`
 }
 
 var (
 	GlobalConfig *Config
 )
 
-func init() {
+func InitConfig() error {
 	configFile := "config.json"
 	data, err := ioutil.ReadFile(configFile)
 
@@ -27,8 +33,7 @@ func init() {
 		data, err = ioutil.ReadFile("./config/" + configFile)
 		if err != nil {
 			log.Println("Read config error!")
-			log.Panic(err)
-			return
+			return err
 		}
 	}
 
@@ -39,9 +44,10 @@ func init() {
 	if err != nil {
 		log.Println("Unmarshal config error!")
 		log.Panic(err)
-		return
+		return err
 	}
 
 	GlobalConfig = config
 	log.Println("Config " + configFile + " loaded.")
+	return nil
 }
