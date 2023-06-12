@@ -16,7 +16,7 @@ func UserSignIn(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
-	if req.Code == "" || req.Status == "" {
+	if req.Code == "" || req.State == "" {
 		response.Error(c, http.StatusBadRequest, fmt.Errorf("please log first"))
 		return
 	}
