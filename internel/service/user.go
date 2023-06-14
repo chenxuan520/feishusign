@@ -44,8 +44,13 @@ func (u *UserService) loopDealCode() {
 			}
 			//step 2 check if sign before
 			sign, err := model.GetSignLogByIDs(userID, msg.Meeting)
-			if err != model.NoFind {
-				logger.GetLogger().Debug(fmt.Sprintln("DEBUG: user sign repeat ", userName))
+			if err != nil && err != model.NoFind {
+				logger.GetLogger().Error(fmt.Sprintln("Error:get user msg ", err.Error()))
+				u.SignMessage <- msg
+				continue
+			}
+			if sign.CreateTime != 0 {
+				logger.GetLogger().Debug(fmt.Sprintln("DEBUG: user sign repeat ", userName, *sign))
 				continue
 			}
 			//step 3 insert signlog
@@ -57,6 +62,7 @@ func (u *UserService) loopDealCode() {
 				CreateTime: time.Now().UnixMilli(),
 			}
 			err = sign.Insert()
+			logger.GetLogger().Debug(fmt.Sprintln("DEBUG:user sigin success ", sign))
 			if err != nil {
 				logger.GetLogger().Error(fmt.Sprintln("Error:insert user msg ", err.Error()))
 				u.SignMessage <- msg

@@ -30,9 +30,9 @@ func (this *SignIn) Insert() error {
 }
 
 func GetSignLogByIDs(userID string, meeting int64) (*SignIn, error) {
-	sign := &SignIn{}
-	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", userID, meeting).Find(sign).Error
-	return sign, err
+	sign := SignIn{}
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", userID, meeting).Find(&sign).Error
+	return &sign, err
 }
 
 func BatchSignLogByMeeting(meetindID int64) ([]*SignIn, error) {
