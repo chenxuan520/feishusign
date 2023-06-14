@@ -13,17 +13,17 @@ var defaultDB *gorm.DB
 
 var NoFind error = gorm.ErrRecordNotFound
 
-func Init(dsn string) (*gorm.DB, error) {
+func InitMysql(dsn string) error {
 	mysqlConfig := mysql.Config{
 		DSN:                       dsn,
 		DefaultStringSize:         256,
 		SkipInitializeWithVersion: false,
 	}
 	if db, err := gorm.Open(mysql.New(mysqlConfig)); err != nil {
-		return nil, err
+		return err
 	} else {
 		defaultDB = db
-		return db, nil
+		return nil
 	}
 }
 
