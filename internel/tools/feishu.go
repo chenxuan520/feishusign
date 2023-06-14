@@ -3,12 +3,12 @@ package tools
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
-	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
 )
 
 var GlobalLark *lark.Client = nil
@@ -40,7 +40,7 @@ func loopUpdateToken(appID, appSecret string) {
 			timer.Stop()
 			err := updateAccessToken(appID, appSecret)
 			if err != nil {
-				logger.GetLogger().Error(fmt.Sprintf("update token wrong %s", err.Error()))
+				log.Println(fmt.Sprintf("update token wrong %s", err.Error()))
 			}
 		}
 	}
