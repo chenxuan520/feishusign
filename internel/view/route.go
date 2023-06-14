@@ -11,10 +11,12 @@ import (
 
 func InitGin(g *gin.Engine) {
 	api := g.Group("/api")
+	api.GET("ping", func(ctx *gin.Context) { ctx.JSON(http.StatusOK, map[string]interface{}{"ping": "pong"}) })
 
 	//user
+	userRoute := NewUserRoute()
 	user := api.Group("/user")
-	user.GET("/signin", UserSignIn)
+	user.GET("/signin", userRoute.UserSignIn)
 
 	//admin
 	admin := api.Group("/admin")
