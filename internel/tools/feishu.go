@@ -34,10 +34,8 @@ func InitLarkClient(appID, appSecret string) error {
 
 func loopUpdateToken(appID, appSecret string) {
 	for {
-		timer := time.NewTimer(updateTokenTime)
 		select {
-		case <-timer.C:
-			timer.Stop()
+		case <-time.After(updateTokenTime):
 			err := updateAccessToken(appID, appSecret)
 			if err != nil {
 				log.Println(fmt.Sprintf("update token wrong %s", err.Error()))

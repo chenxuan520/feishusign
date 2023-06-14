@@ -15,10 +15,7 @@ type UserRoute struct {
 }
 
 func (u *UserRoute) UserSignIn(c *gin.Context) {
-	req := request.ReqSignin{
-		Code:  "",
-		State: "",
-	}
+	req := request.ReqSignin{}
 	req.Code = c.Query("code")
 	req.State = c.Query("state")
 	if req.Code == "" || req.State == "" {

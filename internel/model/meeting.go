@@ -6,8 +6,9 @@ type Meeting struct {
 	MeetingID      int64  `gorm:"column:meeting_id"`
 	OriginatorID   string `gorm:"column:originator_id"`
 	OriginatorName string `gorm:"column:originator_name"`
-	BeginTime      int64  `gorm:"column:begin_time"`
-	EndTime        int64  `gorm:"column:end_time"`
+	Year           int32  `gorm:"column:year"`
+	Month          int32  `gorm:"column:month"`
+	Day            int32  `gorm:"column:day"`
 	CreateTime     int64  `gorm:"column:create_time"`
 }
 
