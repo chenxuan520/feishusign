@@ -50,17 +50,17 @@ func updateAccessToken(appID, appSecret string) error {
 	accessToken.mut.Lock()
 	defer accessToken.mut.Unlock()
 
-	req := &larkcore.SelfBuiltAppAccessTokenReq{
+	req := &larkcore.SelfBuiltTenantAccessTokenReq{
 		AppID:     appID,
 		AppSecret: appSecret,
 	}
-	res, err := GlobalLark.GetAppAccessTokenBySelfBuiltApp(context.Background(), req)
+	res, err := GlobalLark.GetTenantAccessTokenBySelfBuiltApp(context.Background(), req)
 	if err != nil {
 		accessToken.token = ""
 		return err
 	}
 
-	accessToken.token = res.AppAccessToken
+	accessToken.token = res.TenantAccessToken
 	return nil
 }
 
