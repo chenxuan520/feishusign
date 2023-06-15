@@ -53,7 +53,8 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 
 	select {
 	case u.service.SignMessage <- msg:
-		response.Success(c, map[string]interface{}{})
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		c.String(http.StatusOK, "<h1>签到成功</h1>")
 	default:
 		response.Error(c, http.StatusBadRequest, fmt.Errorf("触发限流,稍后再试"))
 	}

@@ -13,39 +13,49 @@
 			margin-top: 20px;
 		}
 	</style>
+	<script>
+		$(document).ready(function() {
+			// 从API获取meeting参数
+			$.getJSON("http://203.34.152.3:5204/api/admin/meeting/latest", function(data) {
+				var meeting = data.data.meeting;
+
+				// 替换WebSocket请求的查询参数
+				var wsUrl = "ws://203.34.152.3:5204/api/admin/meeting/url?meeting=" + meeting;
+
+				// 创建WebSocket连接
+				var ws = new WebSocket(wsUrl);
+				var qr = null;
+
+				// 监听 WebSocket 接收到的消息
+				ws.onmessage = function(event) {
+					// 在页面上展示接收到的消息
+					var messages = document.getElementById("messages");
+					messages.innerHTML = "<p>" + event.data + "</p>";
+
+					// 删除旧的二维码
+					if (qr) {
+						document.getElementById("qr").innerHTML = "";
+						qr.clear();
+					}
+
+					// 生成新的二维码并展示出来
+					qr = new QRCode(document.getElementById("qr"), {
+						text: event.data,
+						width: 400,
+						height: 400,
+						colorDark : "#000000",
+						colorLight : "#ffffff",
+						correctLevel : QRCode.CorrectLevel.H
+					});
+				};
+			});
+		});
+	</script>
 </head>
 <body>
 	<h1>WebSocket Demo</h1>
 	<div id="messages"></div>
 	<div id="qr"></div>
-
-	<script>
-		// 替换成你的 WebSocket API 地址
-		var ws = new WebSocket("ws://203.34.152.3:5204/api/admin/meeting/url?meeting=20210230");
-		var qr = null;
-
-		// 监听 WebSocket 接收到的消息
-		ws.onmessage = function(event) {
-			// 在页面上展示接收到的消息
-			var messages = document.getElementById("messages");
-			messages.innerHTML = "<p>" + event.data + "</p>";
-
-			// 删除旧的二维码
-			if (qr) {
-				document.getElementById("qr").innerHTML = "";
-				qr.clear();
-			}
-
-			// 生成新的二维码并展示出来
-			qr = new QRCode(document.getElementById("qr"), {
-				text: event.data,
-				width: 400,
-				height: 400,
-				colorDark : "#000000",
-				colorLight : "#ffffff",
-				correctLevel : QRCode.CorrectLevel.H
-			});
-		};
-	</script>
 </body>
 </html>
+
