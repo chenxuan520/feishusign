@@ -63,6 +63,7 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 }
 
 func NewAdminRoute() *AdminRoute {
+	fmt.Println("123")
 	admin := AdminRoute{
 		wsUpGrader: &websocket.Upgrader{
 			HandshakeTimeout: 10 * time.Second,

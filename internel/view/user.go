@@ -47,7 +47,7 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 	}
 	msg := service.SignCode{
 		Code:      req.Code,
-		Meeting:   req.State,
+		Meeting:   temp.MeetingID,
 		RetryTime: 0,
 	}
 

@@ -23,7 +23,7 @@ const (
 var DefaultWsService *WsService = nil
 
 type WsService struct {
-	hashmap sync.Map
+	hashmap *sync.Map
 }
 
 type WsConn struct {
@@ -152,9 +152,8 @@ func (w *WsService) DelWsConn(meetingID string) {
 }
 
 func NewWsService() *WsService {
-	defaultWsService := &WsService{
-		hashmap: sync.Map{},
+	DefaultWsService = &WsService{
+		hashmap: &sync.Map{},
 	}
-
-	return defaultWsService
+	return DefaultWsService
 }
