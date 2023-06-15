@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"sync"
@@ -19,53 +20,141 @@ const (
 	HashSalt   = "sign"
 )
 
+var DefaultWsService *WsService = nil
+
 type WsService struct {
-	conn    *websocket.Conn
 	hashmap sync.Map
-	Exit    chan struct{}
 }
 
-func (w *WsService) DownStream() {
+type WsConn struct {
+	MeetingID string
+	UserID    string
+	mux       sync.RWMutex
+	url       string
+	conn      *websocket.Conn
+	Exit      chan struct{}
+}
+
+type MeetingMsg struct {
+	MeetingID string `json:"meeting_id"`
+	Code      string `json:"code"`
+}
+
+func (w *WsConn) Serve() {
+	go w.downStream()
+	go w.upStream()
+}
+
+func (w *WsConn) downStream() {
+	//update first
+	url := w.updateUrl()
+	err := w.conn.WriteMessage(websocket.TextMessage, []byte(url))
+	if err != nil {
+		logger.GetLogger().Error(fmt.Sprintln("Error:write msg wrong ", err.Error()))
+		return
+	}
+	//loop write
 	for {
 		select {
 		case <-w.Exit:
-			w.conn.Close()
 			return
 		case <-time.After(ChangeTime):
 			url := w.updateUrl()
 			err := w.conn.WriteMessage(websocket.TextMessage, []byte(url))
 			if err != nil {
 				logger.GetLogger().Error(fmt.Sprintln("Error:write msg wrong ", err.Error()))
-				w.conn.Close()
 				return
 			}
 		}
 	}
 }
 
-func (w *WsService) UpStream() {
+func (w *WsConn) upStream() {
 	for {
+		//check if close
 		_, _, err := w.conn.ReadMessage()
 		if err != nil {
-			//TODO
+			close(w.Exit)
+			w.conn.Close()
+			if DefaultWsService != nil {
+				DefaultWsService.DelWsConn(w.MeetingID)
+			}
+			return
 		}
 	}
 }
 
-func (w *WsService) updateUrl() string {
-	val := tools.SHA1(time.Now().String() + HashSalt)
-	w.hashmap.Store(HashKey, val)
+func (w *WsConn) updateUrl() string {
+	//lock
+	w.mux.Lock()
+	defer w.mux.Unlock()
+
+	//calc adn store md5
+	val := tools.MD5(time.Now().String() + HashSalt)
+	w.url = val
+
+	msg := MeetingMsg{
+		MeetingID: w.MeetingID,
+		Code:      val,
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		logger.GetLogger().Error(fmt.Sprintf("Error: json encode %s", err.Error()))
+		return ""
+	}
+	base64 := tools.Base64Encode(data)
 	str := url.QueryEscape(config.GlobalConfig.Server.RedirectURL)
-	url := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s&state=%s", str, config.GlobalConfig.Feishu.AppID, "hello")
+	url := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s&state=%s", str, config.GlobalConfig.Feishu.AppID, base64)
 	return url
 }
 
-func NewWsService(conn *websocket.Conn) *WsService {
-	ws := &WsService{
-		conn:    conn,
+func (w *WsService) AddWsConn(conn *websocket.Conn, userID, meetingID string) error {
+	wsconn := &WsConn{
+		MeetingID: meetingID,
+		UserID:    userID,
+		mux:       sync.RWMutex{},
+		url:       "",
+		conn:      conn,
+		Exit:      make(chan struct{}),
+	}
+	_, ok := w.hashmap.LoadOrStore(meetingID, wsconn)
+	if ok {
+		logger.GetLogger().Error(fmt.Sprintln("Error: exist meeting ", meetingID))
+		close(wsconn.Exit)
+		conn.Close()
+		return fmt.Errorf("Error: add conn wrong ")
+	}
+	go wsconn.Serve()
+	return nil
+}
+
+func (w *WsService) GetMeetingUrl(meeting string) (string, error) {
+	//check conn
+	val, ok := w.hashmap.Load(meeting)
+	if !ok {
+		logger.GetLogger().Error(fmt.Sprintln("Error: empty ", meeting))
+		return "", fmt.Errorf("empty meeting")
+	}
+	//assert interface
+	conn, ok := val.(*WsConn)
+	if !ok || conn == nil {
+		logger.GetLogger().Error(fmt.Sprintln("Error: conn ", meeting))
+		return "", fmt.Errorf("conn interface wrong")
+	}
+	//lock
+	conn.mux.RLock()
+	defer conn.mux.RUnlock()
+	return conn.url, nil
+}
+
+func (w *WsService) DelWsConn(meetingID string) {
+	w.hashmap.Delete(meetingID)
+}
+
+func NewWsService() *WsService {
+	defaultWsService := &WsService{
 		hashmap: sync.Map{},
-		Exit:    make(chan struct{}),
 	}
 
-	return ws
+	return defaultWsService
 }

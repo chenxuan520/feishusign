@@ -3,6 +3,8 @@ package service
 type AdminService struct {
 }
 
+var DefaultAdminService *AdminService = nil
+
 func (a *AdminService) AdminLogin(code string) (string, error) {
 	//TODO finish it
 	//step 0 get user message
@@ -15,5 +17,6 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 }
 
 func NewAdminService() *AdminService {
-	return &AdminService{}
+	DefaultAdminService = &AdminService{}
+	return DefaultAdminService
 }

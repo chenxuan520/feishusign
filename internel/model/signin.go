@@ -13,9 +13,9 @@ const (
 
 type SignIn struct {
 	UserID     string `gorm:"column:user_id"`
+	MeetingID  string `gorm:"column:meeting_id"`
 	UserName   string `gorm:"column:user_name"`
 	Status     Status `gorm:"column:status"`
-	MeetingID  int64  `gorm:"column:meeting_id"`
 	CreateTime int64  `gorm:"column:create_time"`
 }
 
@@ -29,7 +29,7 @@ func (this *SignIn) Insert() error {
 	return err
 }
 
-func GetSignLogByIDs(userID string, meeting int64) (*SignIn, error) {
+func GetSignLogByIDs(userID string, meeting string) (*SignIn, error) {
 	sign := SignIn{}
 	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", userID, meeting).Find(&sign).Error
 	return &sign, err

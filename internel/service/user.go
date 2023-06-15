@@ -20,7 +20,7 @@ type UserService struct {
 
 type SignCode struct {
 	Code      string
-	Meeting   int64
+	Meeting   string
 	RetryTime int8
 }
 

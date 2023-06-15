@@ -15,6 +15,7 @@ import (
 type AdminRoute struct {
 	wsUpGrader *websocket.Upgrader
 	service    *service.AdminService
+	WsService  *service.WsService
 }
 
 func (a *AdminRoute) AdminLogin(c *gin.Context) {
@@ -36,8 +37,17 @@ func (a *AdminRoute) AdminLogin(c *gin.Context) {
 }
 
 func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
-	//TODO jwt check
+	//TODO jwt check and get user id
+	uid := ""
 
+	meeting := c.Query("meeting")
+	if meeting == "" {
+		response.Error(c, http.StatusBadRequest, fmt.Errorf("please take meeting query"))
+		return
+	}
+	//TODO check if exist meeting
+
+	//upgrade to websocket
 	resHeader := http.Header{}
 	resHeader.Set("Sec-Websocket-Protocol", c.Request.Header.Get("Sec-Websocket-Protocol"))
 	wsConn, err := a.wsUpGrader.Upgrade(c.Writer, c.Request, resHeader)
@@ -45,9 +55,11 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
-
-	ws := service.NewWsService(wsConn)
-	go ws.Serve()
+	//add conn
+	err = a.WsService.AddWsConn(wsConn, uid, meeting)
+	if err != nil {
+		return
+	}
 }
 
 func NewAdminRoute() *AdminRoute {
@@ -60,7 +72,8 @@ func NewAdminRoute() *AdminRoute {
 				return true
 			},
 		},
-		service: service.NewAdminService(),
+		service:   service.NewAdminService(),
+		WsService: service.NewWsService(),
 	}
 	return &admin
 }

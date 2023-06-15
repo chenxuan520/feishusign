@@ -23,11 +23,12 @@ func InitGin(g *gin.Engine) {
 	{
 		//login
 		adminGroup.GET("/login", adminRoute.AdminLogin)
-		//meeting
-		meeting := adminGroup.Group("/meeting")
+		//meetingGroup
+		meetingGroup := adminGroup.Group("/meeting")
 		{
+			meetingGroup.GET("/url", adminRoute.GetMeetingUrl)
 			//TODO
-			meeting.GET("/url", adminRoute.GetMeetingUrl)
+			meetingGroup.GET("/latest")
 		}
 	}
 

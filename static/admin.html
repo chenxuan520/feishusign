@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>飞书登录 Demo</title>
+</head>
+<body>
+  <button id="loginBtn">使用飞书登录</button>
+
+  <script src="https://apps.fs.work/static/js/jssdk-2.9.0.js"></script>
+  <script>
+    // 替换成你的 App ID 和回调 URL
+    const appId = 'your_app_id';
+    const redirectUri = 'your_redirect_uri';
+
+    // 初始化飞书 JSSDK
+    const JSSDK = new window.JSSDK({ appId });
+
+    // 监听登录按钮点击事件
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      // 调用飞书登录接口
+      JSSDK.getLoginStatus().then((response) => {
+        if (response.status === 'success') {
+          // 已登录，直接处理回调请求
+          handleCallback(response.data.code);
+        } else {
+          // 未登录，调用登录接口
+          JSSDK.login({
+            redirect_uri: redirectUri,
+            scope: 'snsapi_base',
+          });
+        }
+      });
+    });
+
+    // 处理回调请求
+    function handleCallback(code) {
+      // 向后端发送请求，获取 JWT
+      fetch('/your_backend_endpoint?code=' + code)
+        .then(response => response.json())
+        .then(data => {
+          // 打印返回的 JWT
+          console.log(data.jwt);
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+  </script>
+</body>
+</html>

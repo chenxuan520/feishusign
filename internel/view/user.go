@@ -1,11 +1,13 @@
 package view
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/service"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view/request"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view/response"
 )
@@ -22,11 +24,33 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, fmt.Errorf("please log first"))
 		return
 	}
+	data, err := tools.Base64Decode(req.State)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	temp := service.MeetingMsg{}
+	err = json.Unmarshal(data, &temp)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	//validity test
+	url, err := service.DefaultWsService.GetMeetingUrl(temp.MeetingID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	if url != temp.Code {
+		response.Error(c, http.StatusBadRequest, fmt.Errorf("wrong code"))
+		return
+	}
 	msg := service.SignCode{
 		Code:      req.Code,
-		Meeting:   0,
+		Meeting:   req.State,
 		RetryTime: 0,
 	}
+
 	select {
 	case u.service.SignMessage <- msg:
 		response.Success(c, map[string]interface{}{})
