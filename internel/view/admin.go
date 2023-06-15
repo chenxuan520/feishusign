@@ -62,6 +62,17 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 	}
 }
 
+func (a *AdminRoute) GetLatestMeeting(c *gin.Context) {
+	//TODO jwt token
+
+	str, err := a.service.AdminGetMeeting()
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	response.Success(c, map[string]interface{}{"meeting": str})
+}
+
 func NewAdminRoute() *AdminRoute {
 	fmt.Println("123")
 	admin := AdminRoute{

@@ -2,37 +2,60 @@ package view
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
-	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
-	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/service"
 )
 
 type EventRoute struct {
+	AdminService *service.AdminService
 }
 
 func (e *EventRoute) InitEvent() *dispatcher.EventDispatcher {
 	//register event handle
-	return dispatcher.NewEventDispatcher(config.GlobalConfig.Feishu.Verification, config.GlobalConfig.Feishu.EncryptKey).OnP2MessageReceiveV1(e.MsgReceive).OnP2MessageReadV1(func(ctx context.Context, event *larkim.P2MessageReadV1) error {
-		fmt.Println(larkcore.Prettify(event))
-		fmt.Println(event.RequestId())
-		return nil
-	}).OnP2UserCreatedV3(func(ctx context.Context, event *larkcontact.P2UserCreatedV3) error {
-		fmt.Println(larkcore.Prettify(event))
-		fmt.Println(event.RequestId())
-		return nil
-	})
+	events := dispatcher.NewEventDispatcher(config.GlobalConfig.Feishu.Verification, config.GlobalConfig.Feishu.EncryptKey)
+	events.OnP2MessageReceiveV1(e.MsgReceive)
+	return events
 }
 
-func (*EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
-	fmt.Println(larkcore.Prettify(event))
-	fmt.Println(event.RequestId())
+func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
+	if event.Event == nil || event.Event.Message == nil || event.Event.Sender == nil ||
+		event.Event.Sender.SenderId.UserId == nil || event.Event.Message.MessageType == nil {
+		logger.GetLogger().Error("Error:get wrong message")
+		return nil
+	}
+	userID := event.Event.Sender.SenderId.UserId
+	text := larkim.MessagePostText{}
+	err := json.Unmarshal([]byte(*event.Event.Message.Content), &text)
+	if err != nil {
+		e.AdminService.AdminSend(*userID, err.Error())
+		return nil
+	}
+	switch *event.Event.Message.MessageType {
+	case "text":
+		err := e.AdminService.AdminDealMsg(*userID, text.Text)
+		if err != nil {
+			e.AdminService.AdminSend(*userID, err.Error())
+			return nil
+		}
+		e.AdminService.AdminSend(*userID, "success")
+	default:
+		e.AdminService.AdminSend(*userID, "happy new year")
+		return nil
+	}
 	return nil
 }
 
+func (*EventRoute) sendRobotMsg() {
+
+}
+
 func NewEventRoute() *EventRoute {
-	return &EventRoute{}
+	return &EventRoute{
+		AdminService: service.NewAdminService(),
+	}
 }

@@ -13,6 +13,8 @@ const (
 	MaxRetryTime   = 3
 )
 
+var DefaultUserService *UserService = nil
+
 type UserService struct {
 	SignMessage chan SignCode
 	Exit        chan struct{}
@@ -73,10 +75,12 @@ func (u *UserService) loopDealCode() {
 }
 
 func NewUserService() *UserService {
-	service := &UserService{
-		SignMessage: make(chan SignCode, MaxSignChanLen),
-		Exit:        make(chan struct{}),
+	if DefaultUserService == nil {
+		DefaultUserService = &UserService{
+			SignMessage: make(chan SignCode, MaxSignChanLen),
+			Exit:        make(chan struct{}),
+		}
+		go DefaultUserService.loopDealCode()
 	}
-	go service.loopDealCode()
-	return service
+	return DefaultUserService
 }
