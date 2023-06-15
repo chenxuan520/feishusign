@@ -17,12 +17,12 @@ func MeetingTableName() string {
 
 func (m *Meeting) Insert() error {
 	m.CreateTime = time.Now().UnixMilli()
-	err := defaultDB.Table(SignInTableName()).Create(m).Error
+	err := defaultDB.Table(MeetingTableName()).Create(m).Error
 	return err
 }
 
 func GetLatestMeeting() (*Meeting, error) {
 	meeting := Meeting{}
-	err := defaultDB.Table(MeetingTableName()).Select("MAX(create_time)").Scan(&meeting).Error
+	err := defaultDB.Table(MeetingTableName()).Order("create_time DESC").First(&meeting).Error
 	return &meeting, err
 }

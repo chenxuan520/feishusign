@@ -19,7 +19,7 @@ func RobotSendTextMsg(recviveID, content string) error {
 			ReceiveId(recviveID).
 			MsgType("text").
 			Content(content).
-			Uuid(uuid).
+			Uuid(tools.MD5(uuid)).
 			Build()).
 		Build()
 	resp, err := tools.GlobalLark.Im.Message.Create(context.Background(), req, larkcore.WithTenantKey(tools.GetAccessToken()))

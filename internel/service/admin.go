@@ -13,7 +13,7 @@ type AdminService struct {
 
 var DefaultAdminService *AdminService = nil
 
-const dataStr = "20011203"
+const dataStr = "20060102"
 
 func (a *AdminService) AdminLogin(code string) (string, error) {
 	//TODO finish it
@@ -26,8 +26,12 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 	return "", nil
 }
 
-func (a *AdminService) AdminSend(userID, text string) {
-	model.RobotSendTextMsg(userID, text)
+func (a *AdminService) AdminSend(userID, text string) error {
+	err := model.RobotSendTextMsg(userID, text)
+	if err != nil {
+		logger.GetLogger().Error(err.Error())
+	}
+	return nil
 }
 
 func (a *AdminService) AdminGetMeeting() (string, error) {
