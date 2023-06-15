@@ -21,8 +21,10 @@ type Mysql struct {
 }
 
 type Feishu struct {
-	AppID     string `json:"app_id"`
-	AppSecret string `json:"app_secret"`
+	AppID        string `json:"app_id"`
+	AppSecret    string `json:"app_secret"`
+	EncryptKey   string `json:"encrypt_key"`
+	Verification string `json:"verification"`
 }
 
 type Config struct {
