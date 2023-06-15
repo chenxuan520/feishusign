@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/larksuite/oapi-sdk-gin"
 )
 
 func InitGin(g *gin.Engine) {
@@ -32,6 +33,10 @@ func InitGin(g *gin.Engine) {
 		}
 	}
 
+	//event
+	//TODO finish it
+	eventRoute := NewEventRoute()
+	api.POST("/event", sdkginext.NewEventHandlerFunc(eventRoute.InitEvent()))
 }
 
 func initMiddle(g *gin.Engine) {
