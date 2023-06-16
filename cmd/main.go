@@ -31,7 +31,7 @@ func main() {
 
 	g := gin.Default()
 	view.InitGin(g)
-	g.StaticFile("/", "./static/index.html")
+	g.StaticFile("/", config.GlobalConfig.Server.StaticPath+"/index.html")
 
 	g.Run(fmt.Sprintf(":%d", config.GlobalConfig.Server.Port))
 }

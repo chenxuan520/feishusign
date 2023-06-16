@@ -34,8 +34,28 @@ func (a *AdminService) AdminSend(userID, text string) error {
 	return nil
 }
 
-func (a *AdminService) AdminGetMeeting() (string, error) {
-	meeting, err := model.GetLatestMeeting()
+func (a *AdminService) AdminCreateMeeting() (string, error) {
+	now := time.Now()
+	date := now.Format(dataStr)
+	meeting, err := model.GetMeetinByID(date)
+	if err != nil && err != model.NoFind {
+		logger.GetLogger().Error(err.Error())
+		return "", nil
+	}
+	//has exist
+	if meeting.MeetingID != "" {
+		return meeting.MeetingID, nil
+	}
+	//no exist
+	meeting = &model.Meeting{
+		MeetingID:    date,
+		OriginatorID: "",
+		Year:         int32(now.Year()),
+		Month:        int32(now.Month()),
+		Day:          int32(now.Day()),
+		CreateTime:   time.Now().UnixMilli(),
+	}
+	err = meeting.Insert()
 	if err != nil {
 		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err.Error()))
 		return "", err

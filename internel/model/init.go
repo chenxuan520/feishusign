@@ -23,8 +23,12 @@ func InitMysql(dsn string) error {
 		return err
 	} else {
 		defaultDB = db
-		return nil
 	}
+
+	//auto create table
+	defaultDB.AutoMigrate(&Meeting{})
+	defaultDB.AutoMigrate(&SignIn{})
+	return nil
 }
 
 func GetMysqlDB() *gorm.DB {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/service"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view/request"
@@ -26,23 +27,23 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 	}
 	data, err := tools.Base64Decode(req.State)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到失败:" + err.Error()})
 		return
 	}
 	temp := service.MeetingMsg{}
 	err = json.Unmarshal(data, &temp)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到失败:" + err.Error()})
 		return
 	}
 	//validity test
 	url, err := service.DefaultWsService.GetMeetingUrl(temp.MeetingID)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到失败:" + err.Error()})
 		return
 	}
 	if url != temp.Code {
-		response.Error(c, http.StatusBadRequest, fmt.Errorf("wrong code"))
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到失败: 二维码失效"})
 		return
 	}
 	msg := service.SignCode{
@@ -53,11 +54,11 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 
 	select {
 	case u.service.SignMessage <- msg:
-		c.Header("Content-Type", "text/html; charset=utf-8")
-		c.String(http.StatusOK, "<h1>签到成功</h1>")
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到成功"})
 	default:
-		response.Error(c, http.StatusBadRequest, fmt.Errorf("触发限流,稍后再试"))
+		c.HTML(http.StatusOK, config.GlobalConfig.Server.StaticPath+"/result.html", gin.H{"result": "签到失败,触发限流"})
 	}
+	return
 }
 
 func NewUserRoute() *UserRoute {

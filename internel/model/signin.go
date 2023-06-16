@@ -12,11 +12,15 @@ const (
 )
 
 type SignIn struct {
-	UserID     string `gorm:"column:user_id"`
-	MeetingID  string `gorm:"column:meeting_id"`
+	UserID     string `gorm:"column:user_id;index:idx_meeting_id"`
+	MeetingID  string `gorm:"column:meeting_id;index:idx_meeting_id"`
 	UserName   string `gorm:"column:user_name"`
 	Status     Status `gorm:"column:status"`
 	CreateTime int64  `gorm:"column:create_time"`
+}
+
+func (*SignIn) TableName() string {
+	return "sign"
 }
 
 func SignInTableName() string {

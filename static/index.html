@@ -16,11 +16,11 @@
 	<script>
 		$(document).ready(function() {
 			// 从API获取meeting参数
-			$.getJSON("http://203.34.152.3:5204/api/admin/meeting/latest", function(data) {
+			$.getJSON("http://" + window.location.host + "/api/admin/meeting/create", function(data) {
 				var meeting = data.data.meeting;
 
 				// 替换WebSocket请求的查询参数
-				var wsUrl = "ws://203.34.152.3:5204/api/admin/meeting/url?meeting=" + meeting;
+				var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting;
 
 				// 创建WebSocket连接
 				var ws = new WebSocket(wsUrl);

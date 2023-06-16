@@ -13,9 +13,9 @@ import (
 )
 
 type AdminRoute struct {
-	wsUpGrader *websocket.Upgrader
-	service    *service.AdminService
-	WsService  *service.WsService
+	wsUpGrader   *websocket.Upgrader
+	adminService *service.AdminService
+	WsService    *service.WsService
 }
 
 func (a *AdminRoute) AdminLogin(c *gin.Context) {
@@ -26,7 +26,7 @@ func (a *AdminRoute) AdminLogin(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, fmt.Errorf("please log first"))
 		return
 	}
-	jwt, err := a.service.AdminLogin(req.Code)
+	jwt, err := a.adminService.AdminLogin(req.Code)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err)
 		return
@@ -62,10 +62,10 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 	}
 }
 
-func (a *AdminRoute) GetLatestMeeting(c *gin.Context) {
+func (a *AdminRoute) CreateMeeting(c *gin.Context) {
 	//TODO jwt token
 
-	str, err := a.service.AdminGetMeeting()
+	str, err := a.adminService.AdminCreateMeeting()
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err)
 		return
@@ -84,8 +84,8 @@ func NewAdminRoute() *AdminRoute {
 				return true
 			},
 		},
-		service:   service.NewAdminService(),
-		WsService: service.NewWsService(),
+		adminService: service.NewAdminService(),
+		WsService:    service.NewWsService(),
 	}
 	return &admin
 }

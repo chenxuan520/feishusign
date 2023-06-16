@@ -28,8 +28,7 @@ func InitGin(g *gin.Engine) {
 		meetingGroup := adminGroup.Group("/meeting")
 		{
 			meetingGroup.GET("/url", adminRoute.GetMeetingUrl)
-			//TODO
-			meetingGroup.GET("/latest", adminRoute.GetLatestMeeting)
+			meetingGroup.GET("/create", adminRoute.CreateMeeting)
 		}
 	}
 

@@ -10,6 +10,7 @@ import (
 type Server struct {
 	RedirectURL string `json:"redirect_url"`
 	Port        int    `json:"port"`
+	StaticPath  string `json:"static_path"`
 }
 
 type Mysql struct {
