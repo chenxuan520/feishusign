@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Meeting struct {
-	MeetingID    string `gorm:"column:meeting_id:primaryKey"`
+	MeetingID    string `gorm:"column:meeting_id"`
 	OriginatorID string `gorm:"column:originator_id"`
 	Year         int32  `gorm:"column:year"`
 	Month        int32  `gorm:"column:month"`

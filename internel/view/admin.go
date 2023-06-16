@@ -65,7 +65,7 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 func (a *AdminRoute) CreateMeeting(c *gin.Context) {
 	//TODO jwt token
 
-	str, err := a.adminService.AdminCreateMeeting()
+	str, err := a.adminService.AdminCreateMeeting("temp")
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err)
 		return
@@ -74,7 +74,6 @@ func (a *AdminRoute) CreateMeeting(c *gin.Context) {
 }
 
 func NewAdminRoute() *AdminRoute {
-	fmt.Println("123")
 	admin := AdminRoute{
 		wsUpGrader: &websocket.Upgrader{
 			HandshakeTimeout: 10 * time.Second,
