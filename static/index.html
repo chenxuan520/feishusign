@@ -15,12 +15,13 @@
 	</style>
 	<script>
 		$(document).ready(function() {
+			var token = {{.jwt}}
 			// 从API获取meeting参数
-			$.getJSON("http://" + window.location.host + "/api/admin/meeting/create", function(data) {
+			$.getJSON("http://" + window.location.host + "/api/admin/meeting/create?jwt="+ token, function(data) {
 				var meeting = data.data.meeting;
 
 				// 替换WebSocket请求的查询参数
-				var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting;
+				var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting + "&jwt=" + token;
 
 				// 创建WebSocket连接
 				var ws = new WebSocket(wsUrl);

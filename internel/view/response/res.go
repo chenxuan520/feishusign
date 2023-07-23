@@ -2,6 +2,7 @@ package response
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,12 +21,26 @@ func Success(g *gin.Context, data interface{}) {
 	})
 }
 
+func ResultHTML(g *gin.Context, status string) {
+	g.HTML(http.StatusOK, "result.html", map[string]interface{}{
+		"status" : status,
+		"time": time.Now().Format("01.02 15:04:05"),
+	})
+}
+
 // Error 错误
 func Error(g *gin.Context, status int, err error) {
 	g.JSON(status, Response{
 		Code: status,
 		Data: nil,
 		Err:  err.Error(),
+	})
+}
+
+func ErrorHTML(g *gin.Context, status int, err error) {
+	g.HTML(status, "error.html", map[string]interface{}{
+		"code": status,
+		"err":  err.Error(),
 	})
 }
 

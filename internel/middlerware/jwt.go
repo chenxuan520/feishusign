@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//TODO add it to config
+// TODO add it to config
 const (
 	ExpireDay = 3
 	JwtToken  = "cdnsjcdbsh"

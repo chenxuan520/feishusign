@@ -42,7 +42,7 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 		return
 	}
 	if url != temp.Code {
-		response.Error(c, http.StatusBadRequest, fmt.Errorf("签到失败,二维码失效"))
+		response.ResultHTML(c,"签到失败,二维码失效")
 		return
 	}
 	msg := service.SignCode{
@@ -53,9 +53,10 @@ func (u *UserRoute) UserSignIn(c *gin.Context) {
 
 	select {
 	case u.service.SignMessage <- msg:
-		response.Success(c, "success")
+		//response.Success(c, "success")
+		response.ResultHTML(c,"签到成功")
 	default:
-		response.Error(c, http.StatusBadRequest, fmt.Errorf("签到失败,触发限流"))
+		response.ResultHTML(c,"签到失败,触发限流")
 	}
 	return
 }

@@ -2,6 +2,8 @@ package view
 
 import (
 	"fmt"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/model"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 	"net/http"
 	"time"
 
@@ -28,24 +30,43 @@ func (a *AdminRoute) AdminLogin(c *gin.Context) {
 	}
 	jwt, err := a.adminService.AdminLogin(req.Code)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, err)
+		response.ErrorHTML(c, http.StatusBadRequest, err)
 		return
 	}
-	response.Success(c, map[string]interface{}{
+	//response.Success(c, map[string]interface{}{
+	//	"jwt": jwt,
+	//})
+
+	c.HTML(http.StatusOK, "index.html", map[string]interface{}{
 		"jwt": jwt,
 	})
 }
 
 func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
-	//TODO jwt check and get user id
-	uid := ""
+	// jwt check and get user id
+	token := c.Query("jwt")
+	if token == "" {
+		response.ErrorHTML(c, http.StatusBadRequest, fmt.Errorf("no jwt token checked"))
+		return
+	}
+	claims, err := tools.ParseJwtToken(token)
+	if err != nil {
+		response.ErrorHTML(c, http.StatusBadRequest, err)
+		return
+	}
+	userid := claims.UserId
 
 	meeting := c.Query("meeting")
 	if meeting == "" {
 		response.Error(c, http.StatusBadRequest, fmt.Errorf("please take meeting query"))
 		return
 	}
-	//TODO check if exist meeting
+	// check if exist meeting
+	_, err = model.GetMeetingByID(meeting)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, fmt.Errorf("meeting don't exist"))
+		return
+	}
 
 	//upgrade to websocket
 	resHeader := http.Header{}
@@ -56,16 +77,28 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 		return
 	}
 	//add conn
-	err = a.WsService.AddWsConn(wsConn, uid, meeting)
+	err = a.WsService.AddWsConn(wsConn, userid, meeting)
 	if err != nil {
 		return
 	}
 }
 
 func (a *AdminRoute) CreateMeeting(c *gin.Context) {
-	//TODO jwt token
+	// check jwt token
+	token := c.Query("jwt")
+	if token == "" {
+		response.Error(c, http.StatusBadRequest, fmt.Errorf("no jwt token checked"))
+		return
+	}
+	claims, err := tools.ParseJwtToken(token)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err)
+		return
+	}
+	userId := claims.UserId
 
-	str, err := a.adminService.AdminCreateMeeting("temp")
+	// create meeting
+	str, err := a.adminService.AdminCreateMeeting(userId)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err)
 		return

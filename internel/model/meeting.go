@@ -25,7 +25,8 @@ func (m *Meeting) Insert() error {
 	return err
 }
 
-func GetMeetinByID(date string) (*Meeting, error) {
+// GetMeetingByID error not nil if not found when using First()
+func GetMeetingByID(date string) (*Meeting, error) {
 	meeting := Meeting{}
 	err := defaultDB.Table(MeetingTableName()).Where("meeting_id = ?", date).First(&meeting).Error
 	return &meeting, err

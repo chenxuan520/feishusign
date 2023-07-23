@@ -2,6 +2,11 @@ package service
 
 import (
 	"fmt"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
@@ -13,17 +18,68 @@ type AdminService struct {
 
 var DefaultAdminService *AdminService = nil
 
-const dataStr = "20060102"
+const (
+	dataStr = "20060102"
+)
+
+func checkPrivilege(userId string) (bool, error) {
+	userPart, err := model.GetUserPartByID(userId)
+	if err != nil {
+		return false, err
+	}
+	for _, r := range config.GlobalConfig.Feishu.Root {
+		for _, v := range userPart {
+			if v == r {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func sentHTTPReq(method string, url string, head map[string]string, body io.Reader) ([]byte, error) {
+	c := http.Client{}
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range head {
+		req.Header.Set(k, v)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		err0 := fmt.Errorf(resp.Status)
+		return nil, err0
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return respBody, nil
+}
 
 func (a *AdminService) AdminLogin(code string) (string, error) {
-	//TODO finish it
 	//step 0 get user message
+	userId, userName, err := model.GetUserMsgByCode(code)
+	if err != nil {
+		return "", fmt.Errorf("get user msg by code err:%v", err)
+	}
 
 	//step 1 judge user part and if root
+	if ok, err := checkPrivilege(userId); !ok || err != nil {
+		return "", fmt.Errorf("no privilege %v", err)
+	}
 
 	//step 2 create jwt
-
-	return "", nil
+	jwt, err := tools.GenerateJwtToken(userId, userName)
+	if err != nil {
+		return "", err
+	}
+	return jwt, nil
 }
 
 func (a *AdminService) AdminSend(userID, text string) error {
@@ -37,16 +93,16 @@ func (a *AdminService) AdminSend(userID, text string) error {
 func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	now := time.Now()
 	date := now.Format(dataStr)
-	meeting, err := model.GetMeetinByID(date)
+	meeting, err := model.GetMeetingByID(date)
 	if err != nil && err != model.NoFind {
 		logger.GetLogger().Error(err.Error())
 		return "", nil
 	}
-	//has exist
+	// has existed
 	if meeting.MeetingID != "" {
 		return meeting.MeetingID, nil
 	}
-	//no exist
+	// not exist
 	meeting = &model.Meeting{
 		MeetingID:    date,
 		OriginatorID: userID,
