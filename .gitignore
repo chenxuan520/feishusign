@@ -1,4 +1,7 @@
 config.json
 *.vim
+.idea
+/config
 feishusign
 logs
+feishusign_dockerfile
