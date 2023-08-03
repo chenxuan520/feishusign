@@ -44,3 +44,9 @@ func BatchSignLogByMeeting(meetindID int64) ([]*SignIn, error) {
 	err := defaultDB.Table(SignInTableName()).Where("meeting_id = ", meetindID).Find(&signs).Error
 	return signs, err
 }
+
+func GetSignStatusById(id string, meeting string) (Status, error) {
+	sign := SignIn{}
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", id, meeting).First(&sign).Error
+	return sign.Status, err
+}

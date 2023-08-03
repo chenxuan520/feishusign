@@ -10,6 +10,7 @@ CREATE TABLE `sign` (
 CREATE TABLE meeting (
     meeting_id VARCHAR(255) NOT NULL,
     originator_id VARCHAR(255) NOT NULL,
+    url VARCHAR(255) DEFAULT NULL,
     year INT NOT NULL,
     month INT NOT NULL,
     day INT NOT NULL,

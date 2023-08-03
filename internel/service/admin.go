@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
-	"io"
-	"io/ioutil"
-	"net/http"
+	"strings"
 	"time"
 
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
@@ -14,12 +12,21 @@ import (
 )
 
 type AdminService struct {
+	ReqMessage chan SheetReq
+	Exit       chan struct{}
+}
+
+type SheetReq struct {
+	userId string
+	date   string
+	url    string
 }
 
 var DefaultAdminService *AdminService = nil
 
 const (
-	dataStr = "20060102"
+	dataStr     = "20060102"
+	maxSheetReq = 5
 )
 
 func checkPrivilege(userId string) (bool, error) {
@@ -35,31 +42,6 @@ func checkPrivilege(userId string) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-func sentHTTPReq(method string, url string, head map[string]string, body io.Reader) ([]byte, error) {
-	c := http.Client{}
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, err
-	}
-	for k, v := range head {
-		req.Header.Set(k, v)
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		err0 := fmt.Errorf(resp.Status)
-		return nil, err0
-	}
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return respBody, nil
 }
 
 func (a *AdminService) AdminLogin(code string) (string, error) {
@@ -106,6 +88,7 @@ func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	meeting = &model.Meeting{
 		MeetingID:    date,
 		OriginatorID: userID,
+		Url:          "",
 		Year:         int32(now.Year()),
 		Month:        int32(now.Month()),
 		Day:          int32(now.Day()),
@@ -119,30 +102,88 @@ func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	return meeting.MeetingID, nil
 }
 
-func (a *AdminService) AdminDealMsg(userID, text string) error {
-	t, err := time.Parse(dataStr, text)
+func (a *AdminService) AdminDealMsg(userID, text string) {
+	_, err := time.Parse(dataStr, text)
 	if err != nil {
 		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err))
-		return err
+		// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
+		// 同理，如果发送的消息中含有{}，也需要进行替换
+		a.AdminSend(userID, fmt.Sprintf("error: %s", strings.Replace(err.Error(), "\"", "'", -1)))
+		return
 	}
-	meeting := model.Meeting{
-		MeetingID:    text,
-		OriginatorID: userID,
-		Year:         int32(t.Year()),
-		Month:        int32(t.Month()),
-		Day:          int32(t.Day()),
-		CreateTime:   time.Now().UnixMilli(),
-	}
-	err = meeting.Insert()
+
+	// 检查是否有该meeting存在
+	meeting, err := model.GetMeetingByID(text)
 	if err != nil {
-		return err
+		a.AdminSend(userID, err.Error())
+		return
 	}
-	return nil
+
+	req := SheetReq{
+		userId: userID,
+		date:   text,
+		url:    meeting.Url,
+	}
+
+	select {
+	case DefaultAdminService.ReqMessage <- req:
+		a.AdminSend(userID, "请求成功，请稍后")
+	default:
+		a.AdminSend(userID, "请求失败，触发限流")
+	}
+
+	return
 }
 
 func NewAdminService() *AdminService {
 	if DefaultAdminService == nil {
-		DefaultAdminService = &AdminService{}
+		DefaultAdminService = &AdminService{
+			ReqMessage: make(chan SheetReq, maxSheetReq),
+			Exit:       make(chan struct{}),
+		}
+		go DefaultAdminService.loopDealReq()
 	}
 	return DefaultAdminService
+}
+
+func (a *AdminService) loopDealReq() {
+	for {
+		select {
+		case <-a.Exit:
+			return
+		case req := <-a.ReqMessage:
+			date := req.date
+			userId := req.userId
+			url := req.url
+
+
+			if url == "" {
+				// 创建表格
+				var err error
+				url, err = model.CreateSpreadSheet(date)
+				if err != nil {
+					a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+					continue
+				}
+			} else {
+				// 检查表格是否存在
+				exist, err := model.CheckSpreadSheetIfExist(url)
+				if err != nil {
+					a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+					continue
+				}
+				if exist {
+					// TODO 更新表格 (当然也可以不更新就是了)
+				} else {
+					// 链接的表格已经不存在了， 需要重新创建
+					url, err = model.CreateSpreadSheet(date)
+					if err != nil {
+						a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+						continue
+					}
+				}
+			}
+			a.AdminSend(userId, url)
+		}
+	}
 }
