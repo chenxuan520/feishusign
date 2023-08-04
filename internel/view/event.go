@@ -28,6 +28,8 @@ func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageRece
 		return nil
 	}
 	userID := *event.Event.Sender.SenderId.UserId
+
+
 	text := larkim.MessagePostText{}
 	err := json.Unmarshal([]byte(*event.Event.Message.Content), &text)
 	if err != nil {

@@ -29,19 +29,20 @@ const (
 	maxSheetReq = 5
 )
 
-func checkPrivilege(userId string) (bool, error) {
+func checkPrivilege(userId string) bool {
 	userPart, err := model.GetUserPartByID(userId)
 	if err != nil {
-		return false, err
+		logger.GetLogger().Error(err.Error())
+		return false
 	}
 	for _, r := range config.GlobalConfig.Feishu.Root {
 		for _, v := range userPart {
 			if v == r {
-				return true, nil
+				return true
 			}
 		}
 	}
-	return false, nil
+	return false
 }
 
 func (a *AdminService) AdminLogin(code string) (string, error) {
@@ -52,8 +53,8 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 	}
 
 	//step 1 judge user part and if root
-	if ok, err := checkPrivilege(userId); !ok || err != nil {
-		return "", fmt.Errorf("no privilege %v", err)
+	if ok:= checkPrivilege(userId); !ok{
+		return "", fmt.Errorf("无权限开启会议")
 	}
 
 	//step 2 create jwt
@@ -109,6 +110,11 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
 		// 同理，如果发送的消息中含有{}，也需要进行替换
 		a.AdminSend(userID, fmt.Sprintf("error: %s", strings.Replace(err.Error(), "\"", "'", -1)))
+		return
+	}
+
+	if ok:= checkPrivilege(userID); !ok {
+		a.AdminSend(userID, "暂无权限获取签到情况表格")
 		return
 	}
 
