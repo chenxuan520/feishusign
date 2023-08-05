@@ -3,7 +3,9 @@ package view
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/larksuite/oapi-sdk-go/v3/event/dispatcher"
+	larkapproval "github.com/larksuite/oapi-sdk-go/v3/service/approval/v4"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
@@ -16,9 +18,34 @@ type EventRoute struct {
 
 func (e *EventRoute) InitEvent() *dispatcher.EventDispatcher {
 	//register event handle
-	events := dispatcher.NewEventDispatcher(config.GlobalConfig.Feishu.Verification, config.GlobalConfig.Feishu.EncryptKey)
-	events.OnP2MessageReceiveV1(e.MsgReceive)
+	events := dispatcher.
+		NewEventDispatcher(config.GlobalConfig.Feishu.Verification, config.GlobalConfig.Feishu.EncryptKey).
+		OnP2MessageReceiveV1(e.MsgReceive).
+		OnP1LeaveApprovalV4(e.LeaveEventApproval)
 	return events
+}
+
+func (e *EventRoute) LeaveEventApproval(ctx context.Context, event *larkapproval.P1LeaveApprovalV4) error {
+	if event.Event == nil {
+		logger.GetLogger().Error("err: nil event.Event")
+		return nil
+	}
+	if event.Event.LeaveName != "@i18n@6959807929197281283" {
+		// 这个字符串代表例会假，在审批应用的管理后台，可能更改
+		logger.GetLogger().Debug("debug: not @i18n@6959807929197281283 but " + event.Event.LeaveName)
+		return nil
+	}
+	if event.Event.UserID == "" {
+		logger.GetLogger().Error("err: no userId")
+		return nil
+	}
+
+	userId := event.Event.UserID
+	if err := e.AdminService.AdminDealLeave(userId, event.Event.LeaveStartTime); err != nil {
+		logger.GetLogger().Error(fmt.Sprintf("deal leave approval error: %s", err))
+		return nil
+	}
+	return nil
 }
 
 func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
@@ -28,7 +55,6 @@ func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageRece
 		return nil
 	}
 	userID := *event.Event.Sender.SenderId.UserId
-
 
 	text := larkim.MessagePostText{}
 	err := json.Unmarshal([]byte(*event.Event.Message.Content), &text)

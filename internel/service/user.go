@@ -67,6 +67,7 @@ func (u *UserService) loopDealCode() {
 			logger.GetLogger().Debug(fmt.Sprintln("DEBUG:user sigin success ", sign))
 			if err != nil {
 				logger.GetLogger().Error(fmt.Sprintln("Error:insert user msg ", err.Error()))
+				// TODO 这里有可能由于限流导致插入不成功，需解决这种情况
 				u.SignMessage <- msg
 				continue
 			}

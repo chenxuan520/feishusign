@@ -53,7 +53,7 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 	}
 
 	//step 1 judge user part and if root
-	if ok:= checkPrivilege(userId); !ok{
+	if ok := checkPrivilege(userId); !ok {
 		return "", fmt.Errorf("无权限开启会议")
 	}
 
@@ -103,8 +103,36 @@ func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	return meeting.MeetingID, nil
 }
 
+func (a *AdminService) AdminDealLeave(userId, text string) error {
+	t, err := time.Parse("2006-01-02 15:04:05", text)
+	if err != nil {
+		return err
+	}
+
+	username, err := model.GetUsernameById(userId)
+	if err != nil {
+		return err
+	}
+
+	date := t.Format(dataStr)
+
+	sign := &model.SignIn{
+		UserID:     userId,
+		UserName:   username,
+		Status:     model.Leave,
+		MeetingID:  date,
+		CreateTime: time.Now().UnixMilli(),
+	}
+	if err := sign.Insert(); err != nil {
+		return err
+	}
+	logger.GetLogger().Debug(fmt.Sprintln("DEBUG: user leave approval success ", sign))
+
+	return nil
+}
+
 func (a *AdminService) AdminDealMsg(userID, text string) {
-	_, err := time.Parse(dataStr, text)
+	t, err := time.Parse(dataStr, text)
 	if err != nil {
 		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err))
 		// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
@@ -112,14 +140,15 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		a.AdminSend(userID, fmt.Sprintf("error: %s", strings.Replace(err.Error(), "\"", "'", -1)))
 		return
 	}
-
-	if ok:= checkPrivilege(userID); !ok {
+	if ok := checkPrivilege(userID); !ok {
 		a.AdminSend(userID, "暂无权限获取签到情况表格")
 		return
 	}
 
+	date := t.Format(dataStr)
+
 	// 检查是否有该meeting存在
-	meeting, err := model.GetMeetingByID(text)
+	meeting, err := model.GetMeetingByID(date)
 	if err != nil {
 		a.AdminSend(userID, err.Error())
 		return
@@ -127,7 +156,7 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 
 	req := SheetReq{
 		userId: userID,
-		date:   text,
+		date:   date,
 		url:    meeting.Url,
 	}
 
@@ -161,7 +190,6 @@ func (a *AdminService) loopDealReq() {
 			date := req.date
 			userId := req.userId
 			url := req.url
-
 
 			if url == "" {
 				// 创建表格

@@ -1,10 +1,12 @@
 package view
 
 import (
+	"fmt"
+	sdkginext "github.com/larksuite/oapi-sdk-gin"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/larksuite/oapi-sdk-gin"
 )
 
 func InitGin(g *gin.Engine) {
@@ -34,10 +36,22 @@ func InitGin(g *gin.Engine) {
 
 	//event
 	//TODO finish it
+
+	//api.POST("/event", usedForEventDebug)
 	eventRoute := NewEventRoute()
 	api.POST("/event", sdkginext.NewEventHandlerFunc(eventRoute.InitEvent()))
 }
 
 func initMiddle(g *gin.Engine) {
 	g.Use(gin.Recovery())
+}
+
+func usedForEventDebug(c *gin.Context) {
+	data, err := c.GetRawData()
+	if err != nil {
+		log.Println("here err :", err)
+		return
+	}
+	fmt.Println(string(data))
+	return
 }

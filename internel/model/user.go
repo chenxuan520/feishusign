@@ -81,3 +81,15 @@ func GetChatID() (string, error) {
 	// TODO 机器人会在多个群中，需要获取特定的群
 	return *res.Data.Items[0].ChatId, nil
 }
+
+func GetUsernameById(userId string) (string, error) {
+	req := larkcontact.NewGetUserReqBuilder().UserIdType("user_id").UserId(userId).Build()
+	res, err := tools.GlobalLark.Contact.User.Get(context.Background(), req, larkcore.WithTenantAccessToken(tools.GetAccessToken()))
+	if err != nil {
+		return "", err
+	}
+	if !res.Success() {
+		return "", fmt.Errorf("%v", res.Error())
+	}
+	return *res.Data.User.Name, nil
+}
