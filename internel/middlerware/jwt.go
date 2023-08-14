@@ -1,6 +1,9 @@
 package middlerware
 
 import (
+	"fmt"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view/response"
 	"net/http"
 	"strings"
 	"time"
@@ -20,7 +23,7 @@ type jwtInfo struct {
 	jwt.StandardClaims
 }
 
-func CreateJwt(uid string) (string, error) {
+func GenerateJwt(uid string) (string, error) {
 	temp := jwtInfo{
 		UserId: uid,
 		StandardClaims: jwt.StandardClaims{
@@ -38,36 +41,46 @@ func CreateJwt(uid string) (string, error) {
 	}
 }
 
+func VerifyJwt(auth string) (string, error) {
+	arr := strings.Fields(auth)
+	if len(arr) < 2 {
+		err := fmt.Errorf("wrong token")
+		return "", err
+	}
+	auth = arr[1]
+	token, err := jwt.ParseWithClaims(auth, &jwtInfo{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(JwtToken), nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return token.Claims.(*jwtInfo).UserId, nil
+}
+
 func Auth() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		auth := context.Request.Header.Get("Authorization")
 		if len(auth) == 0 {
 			context.Abort()
-			context.JSON(http.StatusUnauthorized, gin.H{
-				"msg": "auth no exist",
-			})
+			err := fmt.Errorf("no auth existing in header")
+			logger.GetLogger().Error(err.Error())
+			response.Error(context, http.StatusUnauthorized, err)
 			return
 		}
-		arr := strings.Fields(auth)
-		if len(arr) < 2 {
-			context.Abort()
-			context.JSON(http.StatusUnauthorized, gin.H{
-				"msg": "token wrong",
-			})
-			return
-		}
-		auth = arr[1]
-		token, err := jwt.ParseWithClaims(auth, &jwtInfo{}, func(token *jwt.Token) (interface{}, error) {
-			return []byte(JwtToken), nil
-		})
+		userId, err := VerifyJwt(auth)
 		if err != nil {
 			context.Abort()
-			context.JSON(http.StatusUnauthorized, gin.H{
-				"msg": err.Error(),
-			})
-			return
+			logger.GetLogger().Error(err.Error())
+			response.Error(context, http.StatusForbidden, err)
 		}
-		context.Set("uid", token.Claims.(*jwtInfo).UserId)
+		context.Set("uid", userId)
 		context.Next()
+	}
+}
+
+func Debug() gin.HandlerFunc {
+	return func(g *gin.Context) {
+		g.Set("uid", "123456")
+		g.Next()
 	}
 }

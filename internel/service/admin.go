@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
-	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/middlerware"
 	"strings"
 	"time"
 
@@ -47,9 +47,9 @@ func checkPrivilege(userId string) bool {
 
 func (a *AdminService) AdminLogin(code string) (string, error) {
 	//step 0 get user message
-	userId, userName, err := model.GetUserMsgByCode(code)
+	userId, _, err := model.GetUserMsgByCode(code)
 	if err != nil {
-		return "", fmt.Errorf("get user msg by code err:%v", err)
+		return "", fmt.Errorf("get user msg by code err: %v", err)
 	}
 
 	//step 1 judge user part and if root
@@ -58,28 +58,31 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 	}
 
 	//step 2 create jwt
-	jwt, err := tools.GenerateJwtToken(userId, userName)
+	jwt, err := middlerware.GenerateJwt(userId)
+	//jwt, err := tools.GenerateJwtToken(userId, userName)
 	if err != nil {
 		return "", err
 	}
 	return jwt, nil
 }
 
-func (a *AdminService) AdminSend(userID, text string) error {
+func (a *AdminService) AdminSend(userID, text string) {
+	// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
+	text = strings.Replace(text, "\"", "'", -1)
 	err := model.RobotSendTextMsg(userID, text)
 	if err != nil {
 		logger.GetLogger().Error(err.Error())
 	}
-	return nil
+	return
 }
 
 func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	now := time.Now()
 	date := now.Format(dataStr)
 	meeting, err := model.GetMeetingByID(date)
-	if err != nil && err != model.NoFind {
+	if err != nil && err != model.NotFind {
 		logger.GetLogger().Error(err.Error())
-		return "", nil
+		return "", err
 	}
 	// has existed
 	if meeting.MeetingID != "" {
@@ -132,16 +135,15 @@ func (a *AdminService) AdminDealLeave(userId, text string) error {
 }
 
 func (a *AdminService) AdminDealMsg(userID, text string) {
-	t, err := time.Parse(dataStr, text)
-	if err != nil {
-		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err))
-		// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
-		// 同理，如果发送的消息中含有{}，也需要进行替换
-		a.AdminSend(userID, fmt.Sprintf("error: %s", strings.Replace(err.Error(), "\"", "'", -1)))
-		return
-	}
 	if ok := checkPrivilege(userID); !ok {
 		a.AdminSend(userID, "暂无权限获取签到情况表格")
+		return
+	}
+
+	t, err := time.Parse(dataStr, text)
+	if err != nil {
+		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err.Error()))
+		a.AdminSend(userID, "请输入形如 20060102 的日期")
 		return
 	}
 
@@ -150,7 +152,12 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 	// 检查是否有该meeting存在
 	meeting, err := model.GetMeetingByID(date)
 	if err != nil {
-		a.AdminSend(userID, err.Error())
+		if err == model.NotFind {
+			a.AdminSend(userID, "没有找到该会议")
+		} else {
+			logger.GetLogger().Error(err.Error())
+			a.AdminSend(userID, "出现查找错误，请查看服务器日志排错")
+		}
 		return
 	}
 
@@ -196,14 +203,16 @@ func (a *AdminService) loopDealReq() {
 				var err error
 				url, err = model.CreateSpreadSheet(date)
 				if err != nil {
-					a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+					a.AdminSend(userId, "创建表格错误，请查看服务器日志排错")
+					logger.GetLogger().Error(err.Error())
 					continue
 				}
 			} else {
 				// 检查表格是否存在
 				exist, err := model.CheckSpreadSheetIfExist(url)
 				if err != nil {
-					a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+					a.AdminSend(userId, "查询表格信息错误，请查看服务器日志排错")
+					logger.GetLogger().Error(err.Error())
 					continue
 				}
 				if exist {
@@ -212,7 +221,8 @@ func (a *AdminService) loopDealReq() {
 					// 链接的表格已经不存在了， 需要重新创建
 					url, err = model.CreateSpreadSheet(date)
 					if err != nil {
-						a.AdminSend(userId, fmt.Sprintln("create sheet err :", err.Error()))
+						a.AdminSend(userId, "创建表格错误，请查看服务器日志排错")
+						logger.GetLogger().Error(err.Error())
 						continue
 					}
 				}

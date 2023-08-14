@@ -66,13 +66,9 @@ func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageRece
 	case "text":
 		e.AdminService.AdminDealMsg(userID, text.Text)
 	default:
-		e.AdminService.AdminSend(userID, "happy new year")
+		e.AdminService.AdminSend(userID, "你好")
 	}
 	return nil
-}
-
-func (*EventRoute) sendRobotMsg() {
-	// TODO : send csv file
 }
 
 func NewEventRoute() *EventRoute {

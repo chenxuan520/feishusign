@@ -69,26 +69,33 @@ func CreateSpreadSheet(date string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get members err: %v", err)
 	}
+
+	signLogs, err := BatchSignLogByMeeting(date)
+	if err != nil {
+		return "", fmt.Errorf("batch sign logs err: %v", err)
+	}
+
 	var values [][]string
 	values = append(values, []string{"姓名", "签到情况", "项目组"})
 	for _, info := range members {
 		id := info[0]
 		name := info[1]
-		status, err := GetSignStatusById(id, date)
 		var s string
-		if err != nil {
-			// 没找到
-			s = "缺席"
-		} else {
-			if status == Scan {
-				s = "已签到"
-			} else {
-				s = "请假"
+		for _, log := range signLogs {
+			if id == log.UserID {
+				if log.Status == Scan {
+					s = "已签到"
+				} else {
+					s = "请假"
+				}
+				goto pass
 			}
 		}
+		s = "缺席"
+	pass:
 		parts, err := GetUserPartByID(id)
 		if err != nil {
-			return "", fmt.Errorf("get user part err : %v", err)
+			return "", fmt.Errorf("get user parts err : %v", err)
 		}
 		values = append(values, []string{name, s, parts[0]})
 	}
@@ -101,7 +108,7 @@ func CreateSpreadSheet(date string) (string, error) {
 }
 
 func InsertItem(sheetToken, sheetId string, values [][]string) error {
-
+	// 组装请求体
 	body := map[string]interface{}{
 		"valueRange": map[string]interface{}{
 			"range":  sheetId,
@@ -128,7 +135,7 @@ func InsertItem(sheetToken, sheetId string, values [][]string) error {
 		return fmt.Errorf("request err : %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		// TODO 打印错误信息
+		//TODO 打印错误信息，需要将响应体反序列化再获取errMsg，有点麻烦
 		//log.Println(string(resp.RawBody))
 		return fmt.Errorf("response statusCode : %v", resp.StatusCode)
 	}
@@ -153,6 +160,7 @@ func CheckSpreadSheetIfExist(url string) (bool, error) {
 	req := larksheets.NewGetSpreadsheetReqBuilder().SpreadsheetToken(token).Build()
 	res, err := tools.GlobalLark.Sheets.Spreadsheet.Get(context.Background(), req, larkcore.WithTenantAccessToken(tools.GetAccessToken()))
 	if err != nil {
+		logger.GetLogger().Error(err.Error())
 		return false, fmt.Errorf("get spreadsheet info err: %v", err)
 	}
 	if res.Success() {

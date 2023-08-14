@@ -21,8 +21,9 @@ func Success(g *gin.Context, data interface{}) {
 	})
 }
 
-func ResultHTML(g *gin.Context, status string) {
+func ResultHTML(g *gin.Context, status string, code int) {
 	g.HTML(http.StatusOK, "result.html", map[string]interface{}{
+		"code" : code,
 		"status" : status,
 		"time": time.Now().Format("01.02 15:04:05"),
 	})

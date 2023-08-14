@@ -1,9 +1,8 @@
 package view
 
 import (
-	"fmt"
 	sdkginext "github.com/larksuite/oapi-sdk-gin"
-	"log"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/middlerware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,8 +28,12 @@ func InitGin(g *gin.Engine) {
 		//meetingGroup
 		meetingGroup := adminGroup.Group("/meeting")
 		{
+			// 用于测试其他功能，跳过校验
+			// meetingGroup.Use(middlerware.Debug())
+
+			// meetingGroup.Use(middlerware.Auth())
 			meetingGroup.GET("/url", adminRoute.GetMeetingUrl)
-			meetingGroup.GET("/create", adminRoute.CreateMeeting)
+			meetingGroup.GET("/create", middlerware.Auth(),adminRoute.CreateMeeting)
 		}
 	}
 
@@ -44,14 +47,4 @@ func InitGin(g *gin.Engine) {
 
 func initMiddle(g *gin.Engine) {
 	g.Use(gin.Recovery())
-}
-
-func usedForEventDebug(c *gin.Context) {
-	data, err := c.GetRawData()
-	if err != nil {
-		log.Println("here err :", err)
-		return
-	}
-	fmt.Println(string(data))
-	return
 }
