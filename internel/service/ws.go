@@ -132,13 +132,13 @@ func (w *WsService) GetMeetingUrl(meeting string) (string, error) {
 	//check conn
 	val, ok := w.hashmap.Load(meeting)
 	if !ok {
-		logger.GetLogger().Error(fmt.Sprintln("Error: empty ", meeting))
+		logger.GetLogger().Error(fmt.Sprintf("Error: empty %s", meeting))
 		return "", fmt.Errorf("empty meeting")
 	}
 	//assert interface
 	conn, ok := val.(*WsConn)
 	if !ok || conn == nil {
-		logger.GetLogger().Error(fmt.Sprintln("Error: conn ", meeting))
+		logger.GetLogger().Error(fmt.Sprintf("Error: conn %s", meeting))
 		return "", fmt.Errorf("conn interface wrong")
 	}
 	//lock

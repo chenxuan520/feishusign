@@ -9,11 +9,13 @@ import (
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view"
 	"net/http"
+	"os"
 	"time"
 )
 
 func main() {
 	initTime()
+	initTest()
 	err := config.InitConfig()
 	if err != nil {
 		panic(err)
@@ -47,7 +49,19 @@ func main() {
 	g.Run(fmt.Sprintf(":%d", config.GlobalConfig.Server.Port))
 }
 
+// 时间修正
 func initTime() {
 	local := time.FixedZone("UTC +8:00", 8*3600)
 	time.Local = local
+}
+
+func initTest() {
+	if len(os.Args) < 2 {
+		config.TestMode = false
+	} else {
+		if os.Args[1] == "-t" {
+			config.TestMode = true
+		}
+	}
+	return
 }

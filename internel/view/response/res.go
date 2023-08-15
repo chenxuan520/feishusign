@@ -1,10 +1,9 @@
 package response
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Response struct {
@@ -22,10 +21,19 @@ func Success(g *gin.Context, data interface{}) {
 }
 
 func ResultHTML(g *gin.Context, status string, code int) {
-	g.HTML(http.StatusOK, "result.html", map[string]interface{}{
-		"code" : code,
-		"status" : status,
-		"time": time.Now().Format("01.02 15:04:05"),
+	var resCode int
+	switch code {
+	case 0 :
+		resCode = http.StatusOK
+	case 1 :
+		resCode = http.StatusServiceUnavailable
+	case 2:
+		resCode = http.StatusBadRequest
+	}
+	g.HTML(resCode, "result.html", map[string]interface{}{
+		"code":   code,
+		"status": status,
+		"time":   time.Now().Format("1.2 15:04:05"),
 	})
 }
 
@@ -45,7 +53,7 @@ func ErrorHTML(g *gin.Context, status int, err error) {
 	})
 }
 
-// Error 错误
+// ErrorDetail 错误
 func ErrorDetail(g *gin.Context, status int, data interface{}, err error) {
 	res := Response{
 		Code: status,

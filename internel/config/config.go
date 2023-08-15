@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var TestMode = false
+
 type Server struct {
 	RedirectURL string `json:"redirect_url"`
 	Port        int    `json:"port"`
