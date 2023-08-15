@@ -39,6 +39,7 @@ type Sign struct {
 	ExpireDuration time.Duration `json:"expire_duration"`
 	JwtToken       string        `json:"jwt_token"`
 	Issuer         string        `json:"issuer"`
+	FolderToken    string        `json:"folder_token"`
 }
 
 type Config struct {

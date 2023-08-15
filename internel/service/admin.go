@@ -20,6 +20,7 @@ type SheetReq struct {
 	userId string
 	date   string
 	url    string
+	update bool
 }
 
 var DefaultAdminService *AdminService = nil
@@ -140,6 +141,9 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		return
 	}
 
+	str := strings.Fields(text)
+	text = str[0]
+
 	t, err := time.Parse(dataStr, text)
 	if err != nil {
 		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err.Error()))
@@ -161,10 +165,15 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		return
 	}
 
+	update := false
+	if len(str) > 1 && str[1] == "更新" {
+		update = true
+	}
 	req := SheetReq{
 		userId: userID,
 		date:   date,
 		url:    meeting.Url,
+		update: update,
 	}
 
 	select {
@@ -209,14 +218,23 @@ func (a *AdminService) loopDealReq() {
 				}
 			} else {
 				// 检查表格是否存在
-				exist, err := model.CheckSpreadSheetIfExist(url)
+				token := model.GetSpreadsheetTokenByUrl(url)
+
+				exist, err := model.CheckSpreadSheetIfExist(token)
 				if err != nil {
 					a.AdminSend(userId, "查询表格信息错误，请查看服务器日志排错")
 					logger.GetLogger().Error(err.Error())
 					continue
 				}
 				if exist {
-					// TODO 更新表格 (当然也可以不更新就是了)
+					if req.update {
+						// TODO 等到飞书支持删除数据或表格后再完成此功能
+						// 目前只能实现将新数据附加在表格末尾，而无法将旧数据删除
+						//if err := model.UpdateContent(date, token); err != nil {
+						//	a.AdminSend(userId, "更新表格错误，请查看服务器日志排错")
+						//	logger.GetLogger().Error(err.Error())
+						//}
+					}
 				} else {
 					// 链接的表格已经不存在了， 需要重新创建
 					url, err = model.CreateSpreadSheet(date)
