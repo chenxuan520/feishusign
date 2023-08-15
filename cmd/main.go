@@ -9,6 +9,7 @@ import (
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/view"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -37,9 +38,10 @@ func main() {
 
 	g.LoadHTMLGlob(config.GlobalConfig.Server.StaticPath + "/*")
 	g.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "https://passport.feishu.cn/accounts"+
-			"/auth_login/oauth2/authorize?client_id="+config.GlobalConfig.Feishu.AppID+
-			"&redirect_uri=http://203.34.152.3:5204/api/admin/login&response_type=code&state=state123456")
+		str := url.QueryEscape(config.GlobalConfig.Server.LoginRedirectURL)
+		c.Redirect(http.StatusMovedPermanently, fmt.Sprintf("https://passport.feishu.cn/"+
+			"accounts/auth_login/oauth2/authorize?client_id=%s&redirect_uri=%s&response_type=code&state=state123456",
+			config.GlobalConfig.Feishu.AppID, str))
 	})
 
 	g.StaticFile("/index", config.GlobalConfig.Server.StaticPath+"/index.html")

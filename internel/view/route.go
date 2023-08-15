@@ -31,16 +31,12 @@ func InitGin(g *gin.Engine) {
 			// 用于测试其他功能，跳过校验
 			// meetingGroup.Use(middlerware.Debug())
 
-			// meetingGroup.Use(middlerware.Auth())
 			meetingGroup.GET("/url", adminRoute.GetMeetingUrl)
-			meetingGroup.GET("/create", middlerware.Auth(),adminRoute.CreateMeeting)
+			meetingGroup.GET("/create", middlerware.Auth(), adminRoute.CreateMeeting)
 		}
 	}
 
 	//event
-	//TODO finish it
-
-	//api.POST("/event", usedForEventDebug)
 	eventRoute := NewEventRoute()
 	api.POST("/event", sdkginext.NewEventHandlerFunc(eventRoute.InitEvent()))
 }

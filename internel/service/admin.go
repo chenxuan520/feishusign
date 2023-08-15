@@ -171,7 +171,7 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 	case DefaultAdminService.ReqMessage <- req:
 		a.AdminSend(userID, "请求成功，请稍后")
 	default:
-		a.AdminSend(userID, "请求失败，触发限流")
+		a.AdminSend(userID, "服务繁忙，请稍后重试")
 	}
 
 	return

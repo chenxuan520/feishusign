@@ -89,19 +89,6 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 }
 
 func (a *AdminRoute) CreateMeeting(c *gin.Context) {
-	// check jwt token
-	//token := c.Query("jwt")
-	//if token == "" {
-	//	response.Error(c, http.StatusBadRequest, fmt.Errorf("no jwt token checked"))
-	//	return
-	//}
-	//claims, err := tools.ParseJwtToken(token)
-	//if err != nil {
-	//	response.Error(c, http.StatusBadRequest, err)
-	//	return
-	//}
-	//userId := claims.UserId
-
 	rawUserId, exists := c.Get("uid")
 	if !exists {
 		err := fmt.Errorf("no userId found in context")
