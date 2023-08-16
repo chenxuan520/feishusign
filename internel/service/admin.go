@@ -50,7 +50,9 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 	//step 0 get user message
 	userId, _, err := model.GetUserMsgByCode(code)
 	if err != nil {
-		return "", fmt.Errorf("get user msg by code err: %v", err)
+		err = fmt.Errorf("get user msg by code err: %v", err)
+		logger.GetLogger().Error(err.Error())
+		return "", err
 	}
 
 	//step 1 judge user part and if root
@@ -60,16 +62,20 @@ func (a *AdminService) AdminLogin(code string) (string, error) {
 
 	//step 2 create jwt
 	jwt, err := middlerware.GenerateJwt(userId)
-	//jwt, err := tools.GenerateJwtToken(userId, userName)
 	if err != nil {
+		err = fmt.Errorf("generate JWT err: %v", err)
+		logger.GetLogger().Error(err.Error())
 		return "", err
 	}
 	return jwt, nil
 }
 
 func (a *AdminService) AdminSend(userID, text string) {
-	// 这里需要将error中的"进行替换，否则在发消息时会出现json反序列化错误
-	text = strings.Replace(text, "\"", "'", -1)
+	if text == "" {
+		return
+	}
+	// 这里需要将error中的"替换成\"，否则在发消息时会出现json反序列化错误
+	text = strings.Replace(text, "\"", "\\\"", -1)
 	err := model.RobotSendTextMsg(userID, text)
 	if err != nil {
 		logger.GetLogger().Error(err.Error())
@@ -107,8 +113,8 @@ func (a *AdminService) AdminCreateMeeting(userID string) (string, error) {
 	return meeting.MeetingID, nil
 }
 
-func (a *AdminService) AdminDealLeave(userId, text string) error {
-	t, err := time.Parse("2006-01-02 15:04:05", text)
+func (a *AdminService) AdminDealLeave(userId, leaveTime string) error {
+	t, err := time.Parse("2006-01-02 15:04:05", leaveTime)
 	if err != nil {
 		return err
 	}
@@ -130,7 +136,7 @@ func (a *AdminService) AdminDealLeave(userId, text string) error {
 	if err := sign.Insert(); err != nil {
 		return err
 	}
-	logger.GetLogger().Debug(fmt.Sprintln("DEBUG: user leave approval success ", sign))
+	logger.GetLogger().Debug(fmt.Sprintf("DEBUG: user leave approval deal success %s", sign.UserName))
 
 	return nil
 }
@@ -146,7 +152,6 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 
 	t, err := time.Parse(dataStr, text)
 	if err != nil {
-		logger.GetLogger().Error(fmt.Sprintf("Error:%s", err.Error()))
 		a.AdminSend(userID, "请输入形如 20060102 的日期")
 		return
 	}

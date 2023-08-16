@@ -31,7 +31,11 @@ func (a *AdminRoute) AdminLogin(c *gin.Context) {
 	}
 	jwt, err := a.adminService.AdminLogin(req.Code)
 	if err != nil {
-		response.ErrorHTML(c, http.StatusBadRequest, err)
+		if err.Error() == "无权限开启会议" {
+			response.ErrorHTML(c, http.StatusForbidden, err)
+		} else {
+			response.ErrorHTML(c, http.StatusInternalServerError, fmt.Errorf("服务器错误，请联系管理员查看后台日志排错"))
+		}
 		return
 	}
 

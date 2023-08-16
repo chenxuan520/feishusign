@@ -27,7 +27,7 @@ func RobotSendTextMsg(receiveID, content string) error {
 		return err
 	}
 	if !resp.Success() {
-		return fmt.Errorf("Error:%d %s %s", resp.Code, resp.Msg, resp.RequestId())
+		return fmt.Errorf("error:%d %s %s", resp.Code, resp.Msg, resp.RequestId())
 	}
 	return nil
 }

@@ -27,7 +27,7 @@ func (e *EventRoute) InitEvent() *dispatcher.EventDispatcher {
 
 func (e *EventRoute) LeaveEventApproval(ctx context.Context, event *larkapproval.P1LeaveApprovalV4) error {
 	if event.Event == nil {
-		logger.GetLogger().Error("err: nil event.Event")
+		logger.GetLogger().Error("deal event err: nil event.Event")
 		return nil
 	}
 	if event.Event.LeaveName != "@i18n@6959807929197281283" {
@@ -36,15 +36,17 @@ func (e *EventRoute) LeaveEventApproval(ctx context.Context, event *larkapproval
 		return nil
 	}
 	if event.Event.UserID == "" {
-		logger.GetLogger().Error("err: no userId")
+		logger.GetLogger().Error("deal event err: no userId")
 		return nil
 	}
 
 	userId := event.Event.UserID
 	if err := e.AdminService.AdminDealLeave(userId, event.Event.LeaveStartTime); err != nil {
-		logger.GetLogger().Error(fmt.Sprintf("deal leave approval error: %s", err))
+		logger.GetLogger().Error(fmt.Sprintf("deal leave approval error: %v", err))
+		e.AdminService.AdminSend(userId, "请假失败，请联系管理员查看后台日志排错")
 		return nil
 	}
+	e.AdminService.AdminSend(userId, fmt.Sprintf("请假成功，请假时间为：%s", event.Event.LeaveStartTime))
 	return nil
 }
 
@@ -66,7 +68,7 @@ func (e *EventRoute) MsgReceive(ctx context.Context, event *larkim.P2MessageRece
 	case "text":
 		e.AdminService.AdminDealMsg(userID, text.Text)
 	default:
-		e.AdminService.AdminSend(userID, "你好")
+		e.AdminService.AdminSend(userID, "你好，请输入文本信息")
 	}
 	return nil
 }
