@@ -1,62 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
+
 <head>
-	<meta charset="UTF-8">
-	<title>WebSocket Demo</title>
-	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-	<script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-	<style>
-		#qr {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			margin-top: 20px;
-		}
-	</style>
-	<script>
-		$(document).ready(function() {
-			var token = {{.jwt}}
-			// 从API获取meeting参数
-			$.getJSON("http://" + window.location.host + "/api/admin/meeting/create?jwt="+ token, function(data) {
-				var meeting = data.data.meeting;
-
-				// 替换WebSocket请求的查询参数
-				var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting + "&jwt=" + token;
-
-				// 创建WebSocket连接
-				var ws = new WebSocket(wsUrl);
-				var qr = null;
-
-				// 监听 WebSocket 接收到的消息
-				ws.onmessage = function(event) {
-					// 在页面上展示接收到的消息
-					var messages = document.getElementById("messages");
-					messages.innerHTML = "<p>" + event.data + "</p>";
-
-					// 删除旧的二维码
-					if (qr) {
-						document.getElementById("qr").innerHTML = "";
-						qr.clear();
-					}
-
-					// 生成新的二维码并展示出来
-					qr = new QRCode(document.getElementById("qr"), {
-						text: event.data,
-						width: 400,
-						height: 400,
-						colorDark : "#000000",
-						colorLight : "#ffffff",
-						correctLevel : QRCode.CorrectLevel.H
-					});
-				};
-			});
-		});
-	</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码签到</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-	<h1>WebSocket Demo</h1>
-	<div id="messages"></div>
-	<div id="qr"></div>
-</body>
-</html>
+<style>
+    .bg-orange {
+            background-color: #FFA500;
+    }
+</style>
+<body class="w-screen h-screen bg-orange flex items-center justify-center">
+    <!-- 二维码中央框 -->
+    <div class="w-[500px] h-[500px] bg-white p-5 rounded-3xl shadow-xl flex justify-center items-center">
+        <div id="qr" class="w-[400px] h-[400px]"></div>
+    </div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bootcss.com/animejs/2.2.0/anime.min.js" ></script>
+    <script>
+        const qrElement = document.getElementById('qr');
 
+        $(document).ready(function () {
+            const token = {{.jwt}};
+            $.ajax({
+                url: "http://" + window.location.host + "/api/admin/meeting/create",
+                type: 'GET',
+                dataType: 'json',
+                headers: {
+                    'Authorization': token  // 添加Authorization请求头
+                },
+                success: function (data) {
+                    var meeting = data.data.meeting;
+                    var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting + "&jwt=" + token;
+                    var ws = new WebSocket(wsUrl);
+                    var qrInstance = null;
+
+                    // 监听 WebSocket 接收到的消息
+                    ws.onmessage = function (event) {
+                        var qrCodeData = {
+                                        text: event.data,
+                                        colorDark: "#000000",
+                                        colorLight: "#ffffff",
+                                        width: 400,
+                                        height: 400,
+                                        correctLevel: QRCode.CorrectLevel.H
+                                    };
+                        if (qrInstance) {
+                            anime({
+                                targets: qrElement,
+                                opacity: 0,
+                                duration: 300,
+                                easing: 'easeInOutQuad',
+                                complete: function() {
+                                    qrElement.innerHTML = "";
+                                    qrInstance.clear();
+                                    qrInstance = new QRCode(qrElement, qrCodeData);
+                                    anime({
+                                        targets: qrElement,
+                                        opacity: 1,
+                                        duration: 300,
+                                        easing: 'easeInOutQuad'
+                                    });
+                                }
+                            });
+                        } else {
+                            qrInstance = new QRCode(qrElement, qrCodeData);
+                        }
+                    };
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>
