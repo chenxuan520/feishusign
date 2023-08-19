@@ -7,6 +7,7 @@ import (
 	larkauthen "github.com/larksuite/oapi-sdk-go/v3/service/authen/v1"
 	larkcontact "github.com/larksuite/oapi-sdk-go/v3/service/contact/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 )
 
@@ -27,8 +28,10 @@ func GetUserMsgByCode(code string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	if res.Data.UserId == nil || res.Data.Name == nil {
-		return "", "", fmt.Errorf("get id wrong " + res.Msg)
+	if !res.Success() || res.Data.UserId == nil || res.Data.Name == nil {
+		err := res.Error()
+		logger.GetLogger().Error(err)
+		return "", "", fmt.Errorf(err)
 	}
 	return *res.Data.UserId, *res.Data.Name, nil
 }
@@ -38,6 +41,11 @@ func GetUserPartByID(userID string) ([]string, error) {
 	resMsg, err := tools.GlobalLark.Contact.User.Get(context.Background(), messageReq, larkcore.WithTenantAccessToken(tools.GetAccessToken()))
 	if err != nil {
 		return nil, err
+	}
+	if !resMsg.Success() {
+		err := resMsg.Error()
+		logger.GetLogger().Error(err)
+		return nil, fmt.Errorf(err)
 	}
 	var parts []string
 	for _, v := range resMsg.Data.User.DepartmentIds {

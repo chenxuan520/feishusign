@@ -19,7 +19,6 @@ type AdminService struct {
 type SheetReq struct {
 	userId string
 	date   string
-	url    string
 	update bool
 }
 
@@ -27,7 +26,7 @@ var DefaultAdminService *AdminService = nil
 
 const (
 	dataStr     = "20060102"
-	maxSheetReq = 5
+	maxSheetReq = 3
 )
 
 func checkPrivilege(userId string) bool {
@@ -159,17 +158,18 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 	date := t.Format(dataStr)
 
 	// 检查是否有该meeting存在
-	meeting, err := model.GetMeetingByID(date)
-	if err != nil {
+
+	if _, err := model.GetMeetingByID(date); err != nil {
 		if err == model.NotFind {
-			a.AdminSend(userID, "没有找到该会议")
+			a.AdminSend(userID, "该会议不存在")
 		} else {
 			logger.GetLogger().Error(err.Error())
-			a.AdminSend(userID, "出现查找错误，请查看服务器日志排错")
+			a.AdminSend(userID, "查找会议错误，请查看服务器日志排错")
 		}
 		return
 	}
 
+	// 为更新表格预留
 	update := false
 	if len(str) > 1 && str[1] == "更新" {
 		update = true
@@ -177,7 +177,6 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 	req := SheetReq{
 		userId: userID,
 		date:   date,
-		url:    meeting.Url,
 		update: update,
 	}
 
@@ -210,8 +209,14 @@ func (a *AdminService) loopDealReq() {
 		case req := <-a.ReqMessage:
 			date := req.date
 			userId := req.userId
-			url := req.url
-
+			var url string
+			if meeting, err := model.GetMeetingByID(date); err != nil {
+				a.AdminSend(userId, "查找会议错误，请查看服务器日志排错")
+				logger.GetLogger().Error(err.Error())
+				continue
+			} else {
+				url = meeting.Url
+			}
 			if url == "" {
 				// 创建表格
 				var err error

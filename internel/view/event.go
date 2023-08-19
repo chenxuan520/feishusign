@@ -30,17 +30,18 @@ func (e *EventRoute) LeaveEventApproval(ctx context.Context, event *larkapproval
 		logger.GetLogger().Error("deal event err: nil event.Event")
 		return nil
 	}
-	if event.Event.LeaveName != "@i18n@6959807929197281283" {
-		// 这个字符串代表例会假，在审批应用的管理后台，可能更改
-		logger.GetLogger().Debug("debug: not @i18n@6959807929197281283 but " + event.Event.LeaveName)
-		return nil
-	}
 	if event.Event.UserID == "" {
 		logger.GetLogger().Error("deal event err: no userId")
 		return nil
 	}
-
 	userId := event.Event.UserID
+	if event.Event.LeaveName != "@i18n@6959807929197281283" {
+		// 这个字符串代表例会假，在审批应用的管理后台，可能更改
+		e.AdminService.AdminSend(userId, "请假失败，假期名称错误，请联系管理员")
+		logger.GetLogger().Debug("debug: not @i18n@6959807929197281283 but " + event.Event.LeaveName)
+		return nil
+	}
+
 	if err := e.AdminService.AdminDealLeave(userId, event.Event.LeaveStartTime); err != nil {
 		logger.GetLogger().Error(fmt.Sprintf("deal leave approval error: %v", err))
 		e.AdminService.AdminSend(userId, "请假失败，请联系管理员查看后台日志排错")
