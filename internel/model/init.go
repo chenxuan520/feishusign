@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql"
 	"fmt"
-
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -11,7 +10,7 @@ import (
 
 var defaultDB *gorm.DB
 
-var NoFind error = gorm.ErrRecordNotFound
+var NotFind = gorm.ErrRecordNotFound
 
 func InitMysql(dsn string) error {
 	mysqlConfig := mysql.Config{
@@ -39,7 +38,7 @@ func GetMysqlDB() *gorm.DB {
 	return defaultDB
 }
 
-//to create database
+// to create database
 func CreateDatabase(dsn string, driver string, createSql string) error {
 	db, err := sql.Open(driver, dsn)
 	if err != nil {

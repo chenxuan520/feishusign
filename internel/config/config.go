@@ -5,12 +5,16 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
+	"time"
 )
 
+var TestMode = false
+
 type Server struct {
-	RedirectURL string `json:"redirect_url"`
-	Port        int    `json:"port"`
-	StaticPath  string `json:"static_path"`
+	SignRedirectURL  string `json:"sign_redirect_url"`
+	LoginRedirectURL string `json:"login_redirect_url"`
+	Port             int    `json:"port"`
+	StaticPath       string `json:"static_path"`
 }
 
 type Mysql struct {
@@ -22,16 +26,27 @@ type Mysql struct {
 }
 
 type Feishu struct {
-	AppID        string `json:"app_id"`
-	AppSecret    string `json:"app_secret"`
-	EncryptKey   string `json:"encrypt_key"`
-	Verification string `json:"verification"`
+	AppID        string   `json:"app_id"`
+	AppSecret    string   `json:"app_secret"`
+	EncryptKey   string   `json:"encrypt_key"`
+	Verification string   `json:"verification"`
+	Root         []string `json:"root"`
+}
+
+type Sign struct {
+	HashSalt       string        `json:"hash_salt"`
+	ChangeTime     time.Duration `json:"change_time"`
+	ExpireDuration time.Duration `json:"expire_duration"`
+	JwtToken       string        `json:"jwt_token"`
+	Issuer         string        `json:"issuer"`
+	FolderToken    string        `json:"folder_token"`
 }
 
 type Config struct {
 	Feishu Feishu `json:"feishu"`
 	Server Server `json:"server"`
 	Mysql  Mysql  `json:"mysql"`
+	Sign   Sign   `json:"sign"`
 }
 
 func (m *Mysql) Dns() string {

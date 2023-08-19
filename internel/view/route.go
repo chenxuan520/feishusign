@@ -1,10 +1,11 @@
 package view
 
 import (
+	sdkginext "github.com/larksuite/oapi-sdk-gin"
+	"gitlab.dian.org.cn/dianinternal/feishusign/internel/middlerware"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/larksuite/oapi-sdk-gin"
 )
 
 func InitGin(g *gin.Engine) {
@@ -27,13 +28,15 @@ func InitGin(g *gin.Engine) {
 		//meetingGroup
 		meetingGroup := adminGroup.Group("/meeting")
 		{
+			// 用于测试其他功能，跳过校验
+			// meetingGroup.Use(middlerware.Debug())
+
 			meetingGroup.GET("/url", adminRoute.GetMeetingUrl)
-			meetingGroup.GET("/create", adminRoute.CreateMeeting)
+			meetingGroup.GET("/create", middlerware.Auth(), adminRoute.CreateMeeting)
 		}
 	}
 
 	//event
-	//TODO finish it
 	eventRoute := NewEventRoute()
 	api.POST("/event", sdkginext.NewEventHandlerFunc(eventRoute.InitEvent()))
 }

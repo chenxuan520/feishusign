@@ -27,9 +27,14 @@ func SignInTableName() string {
 	return "sign"
 }
 
-func (this *SignIn) Insert() error {
-	this.CreateTime = time.Now().UnixMilli()
-	err := defaultDB.Table(SignInTableName()).Create(this).Error
+func (s *SignIn) Insert() error {
+	s.CreateTime = time.Now().UnixMilli()
+	err := defaultDB.Table(SignInTableName()).Create(s).Error
+	return err
+}
+
+func (s *SignIn) Delete() error {
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ?", s.UserID).Delete(&SignIn{}).Error
 	return err
 }
 
@@ -39,8 +44,14 @@ func GetSignLogByIDs(userID string, meeting string) (*SignIn, error) {
 	return &sign, err
 }
 
-func BatchSignLogByMeeting(meetindID int64) ([]*SignIn, error) {
-	signs := []*SignIn{}
-	err := defaultDB.Table(SignInTableName()).Where("meeting_id = ", meetindID).Find(&signs).Error
+func BatchSignLogByMeeting(meetingId string) ([]*SignIn, error) {
+	var signs []*SignIn
+	err := defaultDB.Table(SignInTableName()).Where("meeting_id = ?", meetingId).Find(&signs).Error
 	return signs, err
+}
+
+func GetSignStatusById(id string, meeting string) (Status, error) {
+	sign := SignIn{}
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", id, meeting).First(&sign).Error
+	return sign.Status, err
 }

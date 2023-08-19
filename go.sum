@@ -48,6 +48,8 @@ github.com/larksuite/oapi-sdk-gin v1.0.0 h1:pf2JyCSECZ2ra16JoQEgbl7PPaaOpoAEBno+
 github.com/larksuite/oapi-sdk-gin v1.0.0/go.mod h1:17QKeJMEkIYBUOrUoP0HBVErfzdu7cuJ9XiXitUwe/s=
 github.com/larksuite/oapi-sdk-go/v3 v3.0.22 h1:2x8YKtO1kHwba1zHJ2JXsnwWzVjzqkcLDJu4YAhAjo8=
 github.com/larksuite/oapi-sdk-go/v3 v3.0.22/go.mod h1:FKi8vBgtkBt/xNRQUwdWvoDmsPh7/wP75Sn5IBIBQLk=
+github.com/larksuite/oapi-sdk-go/v3 v3.0.25 h1:OiHd7gq4uF9sbJbZVAxO8KC2ckdg8X/+aqCTtDa+14o=
+github.com/larksuite/oapi-sdk-go/v3 v3.0.25/go.mod h1:FKi8vBgtkBt/xNRQUwdWvoDmsPh7/wP75Sn5IBIBQLk=
 github.com/leodido/go-urn v1.2.4 h1:XlAE/cm/ms7TE/VMVoduSpNBoyc2dOxHs5MZSwAN63Q=
 github.com/leodido/go-urn v1.2.4/go.mod h1:7ZrI8mTSeBSHl/UaRyKQW1qZeMgak41ANeCNaVckg+4=
 github.com/mattn/go-isatty v0.0.19 h1:JITubQf0MOLdlGRuRq+jtsDlekdYPia9ZFsB8h/APPA=

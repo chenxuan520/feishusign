@@ -10,13 +10,13 @@ import (
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 )
 
-func RobotSendTextMsg(recviveID, content string) error {
+func RobotSendTextMsg(receiveID, content string) error {
 	content = larkim.NewTextMsgBuilder().Text(content).Build()
 	uuid := time.Now().String()
 	req := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("user_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
-			ReceiveId(recviveID).
+			ReceiveId(receiveID).
 			MsgType("text").
 			Content(content).
 			Uuid(tools.MD5(uuid)).
@@ -27,7 +27,7 @@ func RobotSendTextMsg(recviveID, content string) error {
 		return err
 	}
 	if !resp.Success() {
-		return fmt.Errorf("Error:%d %s %s", resp.Code, resp.Msg, resp.RequestId())
+		return fmt.Errorf("error:%d %s %s", resp.Code, resp.Msg, resp.RequestId())
 	}
 	return nil
 }

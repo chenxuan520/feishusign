@@ -1,9 +1,120 @@
-{{define "static/index.html"}}
-<html>
-	<h1>
-		{{ .result }}
-	</h1>
-	<h1>Hello</h1>
-</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 
-{{end}}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>签到结果</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-orange {
+            background-color: #FFA500;
+        }
+
+        svg {
+            width: 20%;
+            height: 20%;
+        }
+
+        .circle {
+            stroke-dasharray: 1194;
+            stroke-dashoffset: 1194;
+            animation: circle 1s ease-in-out;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes circle {
+            from {
+                stroke-dashoffset: 1194;
+            }
+
+            to {
+                stroke-dashoffset: 2388;
+            }
+        }
+
+        .tick {
+            stroke-dasharray: 350;
+            stroke-dashoffset: 350;
+            animation: tick 0.4s ease-in-out;
+            animation-fill-mode: forwards;
+            animation-delay: .95s;
+        }
+
+        @keyframes tick {
+            from {
+                stroke-dashoffset: 350;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes title {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .cross1,
+        .cross2 {
+            stroke-dasharray: 400;
+            stroke-dashoffset: 400;
+            animation: crossAnimation 0.4s ease-in-out;
+            animation-fill-mode: forwards;
+            animation-delay: .95s;
+        }
+
+        .cross2 {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes crossAnimation {
+            from {
+                stroke-dashoffset: 400;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen flex bg-orange flex justify-center items-center">
+    <div class="flex flex-col bg-white rounded-lg shadow-xl w-2/3 h-1/2 items-center justify-center">
+            <svg class="tick-block w-16 h-16 m-8" viewBox="0 0 400 400" style="display: none;">
+                <circle cx="200" cy="200" r="190" stroke="green" stroke-width="20" fill="none" class="circle"></circle>
+                <path d="M 100 200 L 180 290 L 300 100" stroke="green" stroke-width="20" fill="none" class="tick"></path>
+            </svg>
+            <svg class="cross-block w-16 h-16 mb-16" viewBox="0 0 400 400" style="display: none;">
+                <circle cx="200" cy="200" r="190" stroke="red" stroke-width="20" fill="none" class="circle"></circle>
+                <path d="M 100 100 L 300 300" stroke="red" stroke-width="20" fill="none" class="cross2"></path>
+                <path d="M 300 100 L 100 300" stroke="red" stroke-width="20" fill="none" class="cross1"></path>
+            </svg>
+            <span class="text-xl font-bold">{{.status}}</span>
+            <span class="text-normal mt-2">{{.time}}</span>
+        
+        
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script>
+        const statusCode = {{.code}};
+        if (statusCode !== 0) {
+            document.querySelector('.tick-block').style.display = 'none';
+            document.querySelector('.cross-block').style.display = 'block';
+        } else {
+            document.querySelector('.tick-block').style.display = 'block';
+            document.querySelector('.cross-block').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

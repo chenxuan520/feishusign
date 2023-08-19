@@ -1,11 +1,11 @@
-CREATE TABLE `sign` (
-  `user_id` varchar(255) NOT NULL,
-  `meeting_id` varchar(255) NOT NULL,
-  `user_name` varchar(255) DEFAULT NULL,
-  `status` tinyint(4) NOT NULL,
-  `create_time` bigint(20) NOT NULL,
-  PRIMARY KEY (`user_id`,`meeting_id`),
-  KEY `idx_meeting_id` (`meeting_id`)
+CREATE TABLE sign (
+  user_id varchar(255) NOT NULL,
+  meeting_id varchar(255) NOT NULL,
+  user_name varchar(255) DEFAULT NULL,
+  status tinyint(4) NOT NULL,
+  create_time bigint(20) NOT NULL,
+  PRIMARY KEY (user_id,meeting_id),
+  KEY idx_meeting_id (meeting_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE meeting (
     meeting_id VARCHAR(255) NOT NULL,
@@ -14,6 +14,7 @@ CREATE TABLE meeting (
     month INT NOT NULL,
     day INT NOT NULL,
     create_time BIGINT NOT NULL,
+    url VARCHAR(255) DEFAULT NULL,
     PRIMARY KEY (meeting_id),
     UNIQUE INDEX meeting_id_UNIQUE (meeting_id)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

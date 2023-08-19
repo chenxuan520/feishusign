@@ -13,13 +13,6 @@ import (
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/tools"
 )
 
-// TODO: add to config //
-const (
-	ChangeTime = time.Second * 7
-	HashKey    = "dian"
-	HashSalt   = "sign"
-)
-
 var DefaultWsService *WsService = nil
 
 type WsService struct {
@@ -47,8 +40,8 @@ func (w *WsConn) Serve() {
 
 func (w *WsConn) downStream() {
 	//update first
-	url := w.updateUrl()
-	err := w.conn.WriteMessage(websocket.TextMessage, []byte(url))
+	URL := w.updateUrl()
+	err := w.conn.WriteMessage(websocket.TextMessage, []byte(URL))
 	if err != nil {
 		logger.GetLogger().Error(fmt.Sprintln("Error:write msg wrong ", err.Error()))
 		return
@@ -58,9 +51,9 @@ func (w *WsConn) downStream() {
 		select {
 		case <-w.Exit:
 			return
-		case <-time.After(ChangeTime):
-			url := w.updateUrl()
-			err := w.conn.WriteMessage(websocket.TextMessage, []byte(url))
+		case <-time.After(config.GlobalConfig.Sign.ChangeTime):
+			URL := w.updateUrl()
+			err := w.conn.WriteMessage(websocket.TextMessage, []byte(URL))
 			if err != nil {
 				logger.GetLogger().Error(fmt.Sprintln("Error:write msg wrong ", err.Error()))
 				return
@@ -90,7 +83,7 @@ func (w *WsConn) updateUrl() string {
 	defer w.mux.Unlock()
 
 	//calc adn store md5
-	val := tools.MD5(time.Now().String() + HashSalt)
+	val := tools.MD5(time.Now().String() + config.GlobalConfig.Sign.HashSalt)
 	w.url = val
 
 	msg := MeetingMsg{
@@ -103,9 +96,9 @@ func (w *WsConn) updateUrl() string {
 		return ""
 	}
 	base64 := tools.Base64Encode(data)
-	str := url.QueryEscape(config.GlobalConfig.Server.RedirectURL)
-	url := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s&state=%s", str, config.GlobalConfig.Feishu.AppID, base64)
-	return url
+	str := url.QueryEscape(config.GlobalConfig.Server.SignRedirectURL)
+	URL := fmt.Sprintf("https://open.feishu.cn/open-apis/authen/v1/index?redirect_uri=%s&app_id=%s&state=%s", str, config.GlobalConfig.Feishu.AppID, base64)
+	return URL
 }
 
 func (w *WsService) AddWsConn(conn *websocket.Conn, userID, meetingID string) error {
@@ -132,13 +125,13 @@ func (w *WsService) GetMeetingUrl(meeting string) (string, error) {
 	//check conn
 	val, ok := w.hashmap.Load(meeting)
 	if !ok {
-		logger.GetLogger().Error(fmt.Sprintln("Error: empty ", meeting))
+		logger.GetLogger().Error(fmt.Sprintf("Error: empty %s", meeting))
 		return "", fmt.Errorf("empty meeting")
 	}
 	//assert interface
 	conn, ok := val.(*WsConn)
 	if !ok || conn == nil {
-		logger.GetLogger().Error(fmt.Sprintln("Error: conn ", meeting))
+		logger.GetLogger().Error(fmt.Sprintf("Error: conn %s", meeting))
 		return "", fmt.Errorf("conn interface wrong")
 	}
 	//lock
