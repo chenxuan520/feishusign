@@ -14,8 +14,8 @@
 </style>
 <body class="w-screen h-screen bg-orange flex items-center justify-center">
     <!-- 二维码中央框 -->
-    <div class="w-[500px] h-[500px] bg-white p-5 rounded-3xl shadow-xl flex justify-center items-center">
-        <div id="qr" class="w-[400px] h-[400px]"></div>
+    <div class="w-[800px] h-[800px] bg-white p-5 rounded-3xl shadow-xl flex justify-center items-center">
+        <div id="qr" class="w-[700px] h-[700px]"></div>
     </div>
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -45,9 +45,9 @@
                                         text: event.data,
                                         colorDark: "#000000",
                                         colorLight: "#ffffff",
-                                        width: 400,
-                                        height: 400,
-                                        correctLevel: QRCode.CorrectLevel.H
+                                        width: 700,
+                                        height: 700,
+                                        correctLevel: QRCode.CorrectLevel.L
                                     };
                         if (qrInstance) {
                             anime({
