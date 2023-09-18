@@ -16,6 +16,7 @@ import (
 var DefaultWsService *WsService = nil
 
 type WsService struct {
+	// 建立 meeting_id 到 wsconn的映射关系
 	hashmap *sync.Map
 }
 
@@ -82,8 +83,10 @@ func (w *WsConn) updateUrl() string {
 	w.mux.Lock()
 	defer w.mux.Unlock()
 
-	//calc adn store md5
+	//calc and store md5
 	val := tools.MD5(time.Now().String() + config.GlobalConfig.Sign.HashSalt)
+	// truncate strings to avoid being too long
+	val = val[0:5]
 	w.url = val
 
 	msg := MeetingMsg{

@@ -7,8 +7,8 @@ import (
 type Status int8
 
 const (
-	Leave Status = 1
-	Scan  Status = 2
+	Leave Status = 1 // 请假状态
+	Scan  Status = 2 // 扫码成功
 )
 
 type SignIn struct {

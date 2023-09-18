@@ -59,6 +59,7 @@ func (u *UserService) loopDealCode() {
 					continue
 				}
 				//step 2 check if sign before
+				//TODO 这里存在在bug隐患,查和插入不是原子的,导致会存在多个协程并发问题,应该依赖数据库的privatekey
 				sign, err = model.GetSignLogByIDs(userID, msg.Meeting)
 				if err != nil && err != model.NotFind {
 					logger.GetLogger().Error(fmt.Sprintf("get user msg err: %v", err.Error()))
