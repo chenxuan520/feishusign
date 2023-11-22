@@ -55,3 +55,12 @@ func GetSignStatusById(id string, meeting string) (Status, error) {
 	err := defaultDB.Table(SignInTableName()).Where("user_id = ? AND meeting_id = ?", id, meeting).First(&sign).Error
 	return sign.Status, err
 }
+
+func GetSignLogById(id string) (*[]SignIn, error) {
+	var signs []SignIn
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ?", id).Order("meeting_id ASC").Find(&signs).Error
+	if err != nil {
+		return nil, err
+	}
+	return &signs, nil
+}

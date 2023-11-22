@@ -12,21 +12,36 @@ import (
 	"strings"
 )
 
-func CreateSpreadSheet(date string) (string, error) {
-	spreadSheet := larksheets.NewSpreadsheetBuilder().Title(date + "签到情况").FolderToken(config.GlobalConfig.Sign.FolderToken).Build()
+func CreateSpreadSheet(text string) (string, string, error) {
+	var spreadSheet *larksheets.Spreadsheet
+	if text == "all" {
+		spreadSheet = larksheets.NewSpreadsheetBuilder().Title("所有签到数据").FolderToken(config.GlobalConfig.Sign.FolderToken).Build()
+	} else {
+		spreadSheet = larksheets.NewSpreadsheetBuilder().Title(text + "签到情况").FolderToken(config.GlobalConfig.Sign.FolderToken).Build()
+	}
+
 	req := larksheets.NewCreateSpreadsheetReqBuilder().Spreadsheet(spreadSheet).Build()
 	res, err := tools.GlobalLark.Sheets.Spreadsheet.Create(context.Background(), req, larkcore.WithTenantAccessToken(tools.GetAccessToken()))
 
 	if err != nil {
-		return "", fmt.Errorf("send spreadsheet create req err : %v", err)
+		return "", "", fmt.Errorf("send spreadsheet create req err : %v", err)
 	}
 	if !res.Success() {
-		return "", fmt.Errorf("create spreadsheet err : %v", res.Error())
+		return "", "", fmt.Errorf("create spreadsheet err : %v", res.Error())
 	}
 
 	spreadsheetToken := *res.Data.Spreadsheet.SpreadsheetToken
 
 	url := *res.Data.Spreadsheet.Url
+
+	return spreadsheetToken, url, nil
+}
+
+func CreateSignDataSpreadSheet(date string) (string, error) {
+	spreadsheetToken, url, err := CreateSpreadSheet(date)
+	if err != nil {
+		return "", err
+	}
 
 	if err := UpdateContent(date, spreadsheetToken); err != nil {
 		return "", err

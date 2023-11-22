@@ -149,6 +149,21 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 	str := strings.Fields(text)
 	text = str[0]
 
+	if text == "all" {
+		req := SheetReq{
+			userId: userID,
+			date:   text,
+			update: false,
+		}
+		select {
+		case DefaultAdminService.ReqMessage <- req:
+			a.AdminSend(userID, "请求成功，请稍后")
+		default:
+			a.AdminSend(userID, "服务繁忙，请稍后重试")
+		}
+		return
+	}
+
 	t, err := time.Parse(dataStr, text)
 	if err != nil {
 		a.AdminSend(userID, "请输入形如 20060102 的日期")
@@ -209,6 +224,17 @@ func (a *AdminService) loopDealReq() {
 		case req := <-a.ReqMessage:
 			date := req.date
 			userId := req.userId
+			if date == "all" {
+				url, err := a.getAllSignData()
+				if err != nil {
+					a.AdminSend(userId, "查找会议错误，请查看服务器日志排错")
+					logger.GetLogger().Error(err.Error())
+					continue
+				}
+				a.AdminSend(userId, url)
+				continue
+			}
+
 			var url string
 			if meeting, err := model.GetMeetingByID(date); err != nil {
 				a.AdminSend(userId, "查找会议错误，请查看服务器日志排错")
@@ -220,7 +246,7 @@ func (a *AdminService) loopDealReq() {
 			if url == "" {
 				// 创建表格
 				var err error
-				url, err = model.CreateSpreadSheet(date)
+				url, err = model.CreateSignDataSpreadSheet(date)
 				if err != nil {
 					a.AdminSend(userId, "创建表格错误，请查看服务器日志排错")
 					logger.GetLogger().Error(err.Error())
@@ -247,7 +273,7 @@ func (a *AdminService) loopDealReq() {
 					}
 				} else {
 					// 链接的表格已经不存在了， 需要重新创建
-					url, err = model.CreateSpreadSheet(date)
+					url, err = model.CreateSignDataSpreadSheet(date)
 					if err != nil {
 						a.AdminSend(userId, "创建表格错误，请查看服务器日志排错")
 						logger.GetLogger().Error(err.Error())
@@ -258,4 +284,90 @@ func (a *AdminService) loopDealReq() {
 			a.AdminSend(userId, url)
 		}
 	}
+}
+
+func (a *AdminService) getAllSignData() (string, error) {
+	meetings, err := model.GetAllMeeting()
+	if err != nil {
+		return "", err
+	}
+	meetingNum := len(meetings)
+	chatId, err := model.GetChatID()
+	if err != nil {
+		return "", err
+	}
+	members, err := model.GetUsersByChat(chatId)
+	if err != nil {
+		return "", err
+	}
+
+	token, url, err := model.CreateSpreadSheet("all")
+	if err != nil {
+		return "", err
+	}
+
+	var values [][]string
+	memberNum := len(members)
+
+	deal:
+	for _, m := range members {
+		userId := m[0]
+
+		parts, err := model.GetUserPartByID(userId)
+		if err != nil {
+			return "", fmt.Errorf("get user parts err : %v", err)
+		}
+		for _, part := range parts {
+			if part == "导师组" {
+				memberNum--
+				continue deal
+			}
+		}
+
+		signs, err := model.GetSignLogById(userId)
+		if err != nil {
+			return "", err
+		}
+		index := 0
+		signsNum := len(*signs)
+		scanCnt := 0
+		leaveCnt := 0
+		for _, meetingId := range meetings {
+			for index < signsNum && (*signs)[index].MeetingID < meetingId {
+				index++
+			}
+			if index >= signsNum {
+				continue
+			}
+			sign := (*signs)[index]
+			if meetingId == sign.MeetingID {
+				index++
+				if sign.Status == model.Scan {
+					scanCnt++
+				} else {
+					leaveCnt++
+				}
+			}
+
+		}
+		values = append(values, []string{
+			m[1],
+			fmt.Sprintf("签到%d次", scanCnt),
+			fmt.Sprintf("请假%d次", leaveCnt),
+			fmt.Sprintf("缺席%d次", meetingNum-scanCnt-leaveCnt),
+		})
+		values = append(values, []string{})
+	}
+	values = append(values, []string{fmt.Sprintf("共计%d人", memberNum)})
+
+	sheetId, err := model.GetFirstSheetId(token)
+	if err != nil {
+		return "", err
+	}
+
+	if err := model.InsertItem(token, sheetId, values); err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

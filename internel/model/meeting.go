@@ -43,3 +43,12 @@ func UpdateMeetingUrl(meetingId string, url string) error {
 	err := defaultDB.Table(MeetingTableName()).Where("meeting_id = ?", meetingId).Update("url", url).Error
 	return err
 }
+
+func GetAllMeeting() ([]string, error) {
+	var meetings []string
+	err := defaultDB.Table(MeetingTableName()).Order("meeting_id ASC").Pluck("meeting_id", &meetings).Error
+	if err != nil {
+		return nil, err
+	}
+	return meetings, nil
+}
