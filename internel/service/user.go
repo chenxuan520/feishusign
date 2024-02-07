@@ -11,7 +11,7 @@ import (
 
 const (
 	MaxSignChanLen = 300
-	MaxRetryTime   = 3
+	MaxRetryTime   = 5
 )
 
 var DefaultUserService *UserService = nil
@@ -48,13 +48,14 @@ func (u *UserService) loopDealCode() {
 			} else {
 				//step 0 check if out limit RetryTime
 				if msg.RetryTime > MaxRetryTime {
-					logger.GetLogger().Error(fmt.Sprintf("Error: out retry limit %v", msg))
+					logger.GetLogger().Error(fmt.Sprintf("Error: out retry limit %v %s", msg, msg.Code))
 					continue
 				}
 				//step 1 get userid and username by code
 				userID, userName, err := model.GetUserMsgByCode(msg.Code)
 				if err != nil {
-					logger.GetLogger().Error(fmt.Sprintf("get user msg err: %v", err.Error()))
+					logger.GetLogger().Error(fmt.Sprintf("get user msg err: %v %s", err.Error(), msg.Code))
+					msg.RetryTime++
 					u.SignMessage <- msg
 					continue
 				}
@@ -62,7 +63,8 @@ func (u *UserService) loopDealCode() {
 				//TODO 这里存在在bug隐患,查和插入不是原子的,导致会存在多个协程并发问题,应该依赖数据库的privatekey
 				sign, err = model.GetSignLogByIDs(userID, msg.Meeting)
 				if err != nil && err != model.NotFind {
-					logger.GetLogger().Error(fmt.Sprintf("get user msg err: %v", err.Error()))
+					logger.GetLogger().Error(fmt.Sprintf("get user msg err: %v %s", err.Error(), msg.Code))
+					msg.RetryTime++
 					u.SignMessage <- msg
 					continue
 				}
@@ -80,8 +82,9 @@ func (u *UserService) loopDealCode() {
 				}
 			}
 			if err := sign.Insert(); err != nil {
-				logger.GetLogger().Error(fmt.Sprintf("insert user msg error: %v", err.Error()))
+				logger.GetLogger().Error(fmt.Sprintf("insert user msg error: %v %s", err.Error(), msg.Code))
 				// TODO 这里有可能由于限流导致插入不成功，需解决这种情况
+				msg.RetryTime++
 				u.SignMessage <- msg
 				continue
 			}
