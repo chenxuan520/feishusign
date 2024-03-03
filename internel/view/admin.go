@@ -64,8 +64,8 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
-	// check if exist meeting
 
+	// check if exist meeting
 	if _, err := model.GetMeetingByID(meeting); err != nil {
 		if err == model.NotFind {
 			err = fmt.Errorf("meeting don't exist")
@@ -73,6 +73,13 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 		logger.GetLogger().Error(err.Error())
 		response.Error(c, http.StatusBadRequest, err)
 		return
+	}
+
+	// check if exist meeting conn
+	if a.WsService.ExistedMeetingConn(meeting) {
+		err := fmt.Errorf("Has exist meeting " + meeting + " conn")
+		logger.GetLogger().Error(err.Error())
+		response.Error(c, http.StatusBadRequest, err)
 	}
 
 	//upgrade to websocket
@@ -84,10 +91,12 @@ func (a *AdminRoute) GetMeetingUrl(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
+
 	//add conn
 	err = a.WsService.AddWsConn(wsConn, userId, meeting)
 	if err != nil {
 		logger.GetLogger().Error(err.Error())
+		response.Error(c, http.StatusBadRequest, err)
 		return
 	}
 }

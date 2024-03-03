@@ -124,6 +124,11 @@ func (w *WsService) AddWsConn(conn *websocket.Conn, userID, meetingID string) er
 	return nil
 }
 
+func (w *WsService) ExistedMeetingConn(meeting string) bool {
+	_, exist := w.hashmap.Load(meeting)
+	return exist
+}
+
 func (w *WsService) GetMeetingUrl(meeting string) (string, error) {
 	//check conn
 	val, ok := w.hashmap.Load(meeting)
