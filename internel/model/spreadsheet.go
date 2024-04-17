@@ -71,7 +71,7 @@ func UpdateContent(date string, spreadsheetToken string) error {
 	}
 
 	var values [][]string
-	values = append(values, []string{"姓名", "签到情况", "项目组"})
+	values = append(values, []string{"姓名", "本科生/研究生", "队员编号", "签到情况", "项目组"})
 deal:
 	for _, info := range members {
 		id := info[0]
@@ -85,6 +85,19 @@ deal:
 				continue deal
 			}
 		}
+		sid, did := GetStudentIDAndDianID(name)
+		if strings.HasPrefix(sid, "U") {
+			sid = "本科生"
+		} else if strings.HasPrefix(sid, "M") {
+			sid = "研究生"
+		} else {
+			sid = "unrecognized"
+		}
+		if did != "" {
+			did = "D" + did
+		} else {
+			did = "Y"
+		}
 
 		s := "缺席"
 		for _, log := range signLogs {
@@ -97,7 +110,7 @@ deal:
 				break
 			}
 		}
-		values = append(values, append([]string{name, s}, parts...))
+		values = append(values, append([]string{name, sid, did, s}, parts...))
 	}
 
 	sheetId, err := GetFirstSheetId(spreadsheetToken)

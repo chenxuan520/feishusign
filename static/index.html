@@ -27,7 +27,7 @@
         $(document).ready(function () {
             const token = {{.jwt}};
             $.ajax({
-                url: "http://" + window.location.host + "/api/admin/meeting/create",
+                url: "https://" + window.location.host + "/meeting_sign_in/api/admin/meeting/create",
                 type: 'GET',
                 dataType: 'json',
                 headers: {
@@ -35,7 +35,7 @@
                 },
                 success: function (data) {
                     var meeting = data.data.meeting;
-                    var wsUrl = "ws://" + window.location.host + "/api/admin/meeting/url?meeting=" + meeting + "&jwt=" + token;
+                    var wsUrl = "wss://" + window.location.host + "/meeting_sign_in/api/admin/meeting/url?meeting=" + meeting + "&jwt=" + token;
                     var ws = new WebSocket(wsUrl);
                     var qrInstance = null;
 

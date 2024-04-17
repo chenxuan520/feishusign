@@ -25,8 +25,14 @@ func InitMysql(dsn string) error {
 	}
 
 	//auto create table
-	defaultDB.AutoMigrate(&Meeting{})
-	defaultDB.AutoMigrate(&SignIn{})
+	err := defaultDB.AutoMigrate(&Meeting{})
+	if err != nil {
+		return err
+	}
+	err = defaultDB.AutoMigrate(&SignIn{})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

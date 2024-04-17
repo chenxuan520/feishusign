@@ -1,20 +1,27 @@
-CREATE TABLE sign (
-  user_id varchar(255) NOT NULL,
-  meeting_id varchar(255) NOT NULL,
-  user_name varchar(255) DEFAULT NULL,
-  status tinyint(4) NOT NULL,
-  create_time bigint(20) NOT NULL,
-  PRIMARY KEY (user_id,meeting_id),
-  KEY idx_meeting_id (meeting_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-CREATE TABLE meeting (
-    meeting_id VARCHAR(255) NOT NULL,
-    originator_id VARCHAR(255) NOT NULL,
-    year INT NOT NULL,
-    month INT NOT NULL,
-    day INT NOT NULL,
-    create_time BIGINT NOT NULL,
-    url VARCHAR(255) DEFAULT NULL,
-    PRIMARY KEY (meeting_id),
-    UNIQUE INDEX meeting_id_UNIQUE (meeting_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+create table sign
+(
+    user_id     varchar(256) not null,
+    meeting_id  varchar(256) not null,
+    user_name   varchar(256) null,
+    status      tinyint      not null,
+    create_time bigint       not null,
+    primary key (user_id, meeting_id)
+);
+
+create index idx_meeting_id
+    on sign (meeting_id);
+
+
+create table meeting
+(
+    meeting_id    varchar(256) not null
+        primary key,
+    originator_id varchar(256) null,
+    year          int          null,
+    month         int          null,
+    day           int          null,
+    create_time   bigint       null,
+    url           varchar(256) null
+);
+

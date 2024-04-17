@@ -1,0 +1,7 @@
+FROM ubuntu:22.04
+
+WORKDIR /feishusign
+
+COPY ./feishusign /feishusign/
+
+ENTRYPOINT ["./feishusign"]

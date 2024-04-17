@@ -7,7 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/websocket v1.5.0
 	github.com/larksuite/oapi-sdk-gin v1.0.0
-	github.com/larksuite/oapi-sdk-go/v3 v3.0.25
+	github.com/larksuite/oapi-sdk-go/v3 v3.2.2
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	go.uber.org/zap v1.24.0
 	gorm.io/driver/mysql v1.5.1
