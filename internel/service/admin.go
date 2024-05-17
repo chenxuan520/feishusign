@@ -1,9 +1,12 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/config"
 	"gitlab.dian.org.cn/dianinternal/feishusign/internel/middlerware"
+	"gorm.io/gorm"
+	"strconv"
 	"strings"
 	"time"
 
@@ -146,8 +149,7 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		return
 	}
 
-	str := strings.Fields(text)
-	text = str[0]
+	text = strings.TrimSpace(text)
 
 	if text == "all" {
 		req := SheetReq{
@@ -161,6 +163,50 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 		default:
 			a.AdminSend(userID, "服务繁忙，请稍后重试")
 		}
+		return
+	} else if len(text) > 6 && text[:6] == "change" {
+		sp := strings.Split(text, " ")
+		if len(sp) != 3 {
+			a.AdminSend(userID, "长度错误，请检查")
+			return
+		}
+
+		username, err := model.GetUsernameById(userID)
+		if err != nil {
+			a.AdminSend(userID, "获取姓名失败，请检查")
+			return
+		}
+
+		_, err = time.Parse(dataStr, sp[1])
+		if err != nil {
+			a.AdminSend(userID, "时间错误，请检查")
+			return
+		}
+
+		status, err := strconv.Atoi(sp[2])
+		if err != nil || (status != 1 && status != 2) {
+			a.AdminSend(userID, "状态错误，请检查")
+			return
+		}
+
+		sign := &model.SignIn{
+			UserID:     userID,
+			MeetingID:  sp[1],
+			UserName:   username,
+			Status:     model.Status(status),
+			CreateTime: time.Now().UnixMilli(),
+		}
+
+		err = sign.Insert()
+		if errors.Is(err, gorm.ErrDuplicatedKey) || strings.Contains(err.Error(), "Duplicate"){
+			err = sign.Update()
+		}
+		if err != nil {
+			a.AdminSend(userID, "插入错误，请检查服务器日志")
+			logger.GetLogger().Error(err.Error())
+			return
+		}
+		a.AdminSend(userID, "修改成功")
 		return
 	}
 
@@ -186,9 +232,9 @@ func (a *AdminService) AdminDealMsg(userID, text string) {
 
 	// 为更新表格预留
 	update := false
-	if len(str) > 1 && str[1] == "更新" {
-		update = true
-	}
+	//if len(str) > 1 && str[1] == "更新" {
+	//	update = true
+	//}
 	req := SheetReq{
 		userId: userID,
 		date:   date,
@@ -309,7 +355,7 @@ func (a *AdminService) getAllSignData() (string, error) {
 	var values [][]string
 	memberNum := len(members)
 
-	deal:
+deal:
 	for _, m := range members {
 		userId := m[0]
 

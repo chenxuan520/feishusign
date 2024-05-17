@@ -33,8 +33,13 @@ func (s *SignIn) Insert() error {
 	return err
 }
 
+func (s *SignIn) Update() error {
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ? and meeting_id = ?", s.UserID, s.MeetingID).Save(s).Error
+	return err
+}
+
 func (s *SignIn) Delete() error {
-	err := defaultDB.Table(SignInTableName()).Where("user_id = ?", s.UserID).Delete(&SignIn{}).Error
+	err := defaultDB.Table(SignInTableName()).Where("user_id = ? and meeting_id = ?", s.UserID, s.MeetingID).Delete(&SignIn{}).Error
 	return err
 }
 
